@@ -13,7 +13,9 @@ import {
   CheckCircle2,
   Sparkles,
   SlidersHorizontal,
-  Download
+  Download,
+  Menu,
+  X
 } from 'lucide-react';
 
 const CONTENT_TYPES = [
@@ -30,6 +32,7 @@ const ASPECT_RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:4'];
 
 function App() {
   const [activeTab, setActiveTab] = useState('image-studio');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // State form Teks
   const [selectedType, setSelectedType] = useState('Caption Instagram');
@@ -120,39 +123,60 @@ function App() {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
+  const handleMenuClick = (tab: string) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false); // Auto close menu on mobile after selection
+  }
+
   return (
     <div className="flex h-screen bg-[#050505] font-sans text-slate-300 selection:bg-indigo-500/30 overflow-hidden relative">
       {/* Ambient background glows */}
       <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
 
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+      )}
+
       {/* SIDEBAR */}
-      <aside className="w-72 bg-white/[0.02] border-r border-white/5 flex flex-col backdrop-blur-xl z-10">
-        <div className="h-20 flex items-center px-8 border-b border-white/5">
-          <div className="relative mr-3">
-            <div className="absolute inset-0 bg-indigo-500 blur-md opacity-50"></div>
-            <Zap className="w-7 h-7 text-indigo-400 relative z-10" />
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#0a0a0a] md:bg-white/[0.02] border-r border-white/5 flex flex-col backdrop-blur-xl transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="h-20 flex items-center justify-between px-8 border-b border-white/5">
+          <div className="flex items-center">
+            <div className="relative mr-3">
+              <div className="absolute inset-0 bg-indigo-500 blur-md opacity-50"></div>
+              <Zap className="w-7 h-7 text-indigo-400 relative z-10" />
+            </div>
+            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400 tracking-tight">
+              KontenKilat AI
+            </span>
           </div>
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400 tracking-tight">
-            KontenKilat AI
-          </span>
+          <button 
+            className="md:hidden text-slate-400 hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
         
         <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
           <button 
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => handleMenuClick('dashboard')}
             className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'dashboard' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
           >
             <LayoutDashboard className="w-5 h-5 mr-3" /> Dashboard
           </button>
           <button 
-            onClick={() => setActiveTab('generate')}
+            onClick={() => handleMenuClick('generate')}
             className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'generate' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
           >
             <PenTool className="w-5 h-5 mr-3" /> AI Generator Teks
           </button>
           <button 
-            onClick={() => setActiveTab('image-studio')}
+            onClick={() => handleMenuClick('image-studio')}
             className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'image-studio' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
           >
             <ImageIcon className="w-5 h-5 mr-3" /> Studio Gambar AI
@@ -181,45 +205,56 @@ function App() {
           <button className="w-full flex items-center px-4 py-2.5 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5">
             <Settings className="w-5 h-5 mr-3" /> Settings
           </button>
+          <button className="w-full flex items-center px-4 py-2.5 text-slate-400 hover:text-red-400 transition-colors mt-1 rounded-lg hover:bg-red-500/10">
+            <LogOut className="w-5 h-5 mr-3" /> Logout
+          </button>
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col z-10 relative">
-        <header className="h-20 bg-white/[0.01] border-b border-white/5 flex items-center justify-between px-10 backdrop-blur-md">
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            {activeTab === 'dashboard' && 'Overview'}
-            {activeTab === 'generate' && 'AI Generator Teks'}
-            {activeTab === 'image-studio' && 'Studio Gambar AI'}
-          </h1>
-          <div className="flex items-center gap-4">
-            <div className="px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-300 text-sm font-medium flex items-center shadow-[0_0_10px_rgba(99,102,241,0.1)]">
+      <main className="flex-1 flex flex-col z-10 relative overflow-hidden">
+        <header className="h-20 bg-white/[0.01] border-b border-white/5 flex items-center justify-between px-4 md:px-10 backdrop-blur-md">
+          <div className="flex items-center">
+            <button 
+              className="md:hidden mr-3 text-slate-300 hover:text-white p-2 bg-white/5 rounded-lg border border-white/10"
+              onClick={() => setIsMobileMenuOpen(true)}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight truncate">
+              {activeTab === 'dashboard' && 'Overview'}
+              {activeTab === 'generate' && 'AI Generator Teks'}
+              {activeTab === 'image-studio' && 'Studio Gambar AI'}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="hidden md:flex px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-300 text-sm font-medium items-center shadow-[0_0_10px_rgba(99,102,241,0.1)]">
               <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
               Pro Network
             </div>
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg border border-white/10 ring-2 ring-black cursor-pointer hover:scale-105 transition-transform">
+            <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg border border-white/10 ring-2 ring-black cursor-pointer hover:scale-105 transition-transform flex-shrink-0">
               FA
             </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-auto p-10 custom-scrollbar">
+        <div className="flex-1 overflow-auto p-4 md:p-10 custom-scrollbar">
           {errorMsg && (
-            <div className="max-w-5xl mx-auto mb-8 p-4 bg-red-950/50 text-red-400 rounded-2xl border border-red-900/50 flex items-center">
-              <div className="w-2 h-2 bg-red-500 rounded-full mr-3 animate-pulse"></div>
+            <div className="max-w-5xl mx-auto mb-6 md:mb-8 p-4 bg-red-950/50 text-red-400 rounded-2xl border border-red-900/50 flex items-center text-sm md:text-base">
+              <div className="w-2 h-2 bg-red-500 rounded-full mr-3 animate-pulse flex-shrink-0"></div>
               {errorMsg}
             </div>
           )}
 
           {/* TAB: IMAGE STUDIO */}
           {activeTab === 'image-studio' && (
-            <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
               {/* Left Column: Settings */}
               <div className="lg:col-span-5 space-y-6">
-                <div className="bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl p-8 relative overflow-hidden">
+                <div className="bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl p-6 md:p-8 relative overflow-hidden">
                   <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
                   
-                  <h2 className="text-xl font-bold text-white mb-6 flex items-center">
+                  <h2 className="text-lg md:text-xl font-bold text-white mb-6 flex items-center">
                     <Sparkles className="w-5 h-5 mr-3 text-indigo-400" />
                     Prompt Engineering
                   </h2>
@@ -228,8 +263,8 @@ function App() {
                     <div>
                       <label className="block text-sm font-medium text-slate-400 mb-2">Main Prompt</label>
                       <textarea 
-                        className="w-full h-32 p-4 bg-white/[0.02] border border-white/10 rounded-2xl focus:border-indigo-500/50 focus:bg-white/[0.05] outline-none transition-all resize-none text-slate-200 placeholder:text-slate-600 shadow-inner"
-                        placeholder="Deskripsikan gambar dengan detail... (cth: a futuristic cyberpunk city with neon lights, 8k resolution, ultra detailed)"
+                        className="w-full h-32 p-4 bg-white/[0.02] border border-white/10 rounded-2xl focus:border-indigo-500/50 focus:bg-white/[0.05] outline-none transition-all resize-none text-slate-200 placeholder:text-slate-600 shadow-inner text-sm md:text-base"
+                        placeholder="Deskripsikan gambar dengan detail... (cth: a futuristic cyberpunk city with neon lights)"
                         value={imagePrompt}
                         onChange={(e) => setImagePrompt(e.target.value)}
                         disabled={isGeneratingImage}
@@ -245,7 +280,7 @@ function App() {
                           <SlidersHorizontal className="w-4 h-4 mr-2" />
                           Advanced Configuration
                         </label>
-                        <span className="text-xs text-slate-500 bg-white/5 px-2 py-1 rounded-md">Pro</span>
+                        <span className="text-xs text-slate-500 bg-white/5 px-2 py-1 rounded-md hidden md:inline-block">Pro</span>
                       </div>
                       
                       {showAdvanced && (
@@ -261,10 +296,10 @@ function App() {
                             ></textarea>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-xs font-medium text-slate-500 mb-2">Aspect Ratio</label>
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-4 sm:grid-cols-2 gap-2">
                                 {ASPECT_RATIOS.slice(0,4).map(ratio => (
                                   <button
                                     key={ratio}
@@ -283,10 +318,10 @@ function App() {
                               <select 
                                 value={artStyle}
                                 onChange={(e) => setArtStyle(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 text-slate-300 text-sm rounded-lg p-2.5 outline-none focus:border-indigo-500/50 appearance-none"
+                                className="w-full bg-[#111] border border-white/10 text-slate-300 text-sm rounded-lg p-2.5 outline-none focus:border-indigo-500/50"
                               >
                                 {ART_STYLES.map(style => (
-                                  <option key={style} value={style} className="bg-slate-900">{style}</option>
+                                  <option key={style} value={style}>{style}</option>
                                 ))}
                               </select>
                             </div>
@@ -299,15 +334,15 @@ function App() {
                   <button 
                     onClick={handleGenerateImage}
                     disabled={isGeneratingImage}
-                    className="mt-8 w-full relative group overflow-hidden bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-8 w-full relative group overflow-hidden bg-white text-black font-bold py-3.5 md:py-4 rounded-2xl flex items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></div>
                     {isGeneratingImage ? (
-                      <Loader2 className="w-5 h-5 mr-3 animate-spin text-black group-hover:text-white relative z-10" />
+                      <Loader2 className="w-5 h-5 mr-2 md:mr-3 animate-spin text-black group-hover:text-white relative z-10" />
                     ) : (
-                      <ImageIcon className="w-5 h-5 mr-3 text-black group-hover:text-white relative z-10" />
+                      <ImageIcon className="w-5 h-5 mr-2 md:mr-3 text-black group-hover:text-white relative z-10" />
                     )} 
-                    <span className="relative z-10 group-hover:text-white transition-colors duration-300">
+                    <span className="relative z-10 group-hover:text-white transition-colors duration-300 text-sm md:text-base">
                       {isGeneratingImage ? 'Rendering Matrix...' : 'Generate Image'}
                     </span>
                   </button>
@@ -316,18 +351,18 @@ function App() {
 
               {/* Right Column: Preview */}
               <div className="lg:col-span-7">
-                <div className="h-full min-h-[500px] bg-black/20 backdrop-blur-sm rounded-3xl border border-white/5 flex flex-col relative overflow-hidden group">
+                <div className="h-[400px] md:h-full md:min-h-[500px] bg-black/20 backdrop-blur-sm rounded-3xl border border-white/5 flex flex-col relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none"></div>
                   
                   {isGeneratingImage ? (
                     <div className="flex-1 flex flex-col items-center justify-center relative z-10">
-                      <div className="w-24 h-24 relative mb-6">
+                      <div className="w-20 h-20 md:w-24 md:h-24 relative mb-6">
                         <div className="absolute inset-0 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
                         <div className="absolute inset-2 border-r-2 border-purple-500 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
                         <div className="absolute inset-4 bg-indigo-500/20 rounded-full blur-md animate-pulse"></div>
                       </div>
-                      <h3 className="text-indigo-300 font-bold tracking-widest uppercase text-sm animate-pulse">Synthesizing Pixels</h3>
-                      <p className="text-slate-500 text-xs mt-2">Applying {artStyle} style filters...</p>
+                      <h3 className="text-indigo-300 font-bold tracking-widest uppercase text-xs md:text-sm animate-pulse">Synthesizing Pixels</h3>
+                      <p className="text-slate-500 text-[10px] md:text-xs mt-2">Applying {artStyle} style filters...</p>
                     </div>
                   ) : generatedImageUrl ? (
                     <div className="w-full h-full p-2 relative group/img animate-in zoom-in-95 duration-500">
@@ -336,20 +371,20 @@ function App() {
                         alt="Generated" 
                         className="w-full h-full object-contain rounded-2xl bg-black"
                       />
-                      <div className="absolute inset-2 bg-gradient-to-t from-black/80 via-transparent to-transparent rounded-2xl opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-end justify-between p-6">
+                      <div className="absolute inset-2 bg-gradient-to-t from-black/80 via-transparent to-transparent rounded-2xl opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-end justify-between p-4 md:p-6">
                         <div>
-                          <p className="text-white font-bold text-sm">{artStyle} • {aspectRatio}</p>
-                          <p className="text-slate-300 text-xs mt-1 line-clamp-1 max-w-md">{imagePrompt}</p>
+                          <p className="text-white font-bold text-xs md:text-sm">{artStyle} • {aspectRatio}</p>
+                          <p className="text-slate-300 text-[10px] md:text-xs mt-1 line-clamp-1 max-w-[200px] md:max-w-md">{imagePrompt}</p>
                         </div>
-                        <button className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-3 rounded-xl transition-all hover:scale-110">
-                          <Download className="w-5 h-5" />
+                        <button className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-2 md:p-3 rounded-xl transition-all hover:scale-110">
+                          <Download className="w-4 h-4 md:w-5 md:h-5" />
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center relative z-10 opacity-50">
-                      <ImageIcon className="w-16 h-16 text-slate-600 mb-4" />
-                      <p className="text-slate-500 text-sm">Waiting for prompt input...</p>
+                    <div className="flex-1 flex flex-col items-center justify-center relative z-10 opacity-50 p-6 text-center">
+                      <ImageIcon className="w-12 h-12 md:w-16 md:h-16 text-slate-600 mb-4" />
+                      <p className="text-slate-500 text-xs md:text-sm">Waiting for prompt input to initialize rendering engine...</p>
                     </div>
                   )}
                 </div>
@@ -357,54 +392,55 @@ function App() {
             </div>
           )}
 
-          {/* TAB: DASHBOARD & GENERATE TEKS (Kode lama digabung singkat biar file gak kepanjangan buat contoh ini) */}
+          {/* TAB: DASHBOARD */}
           {activeTab === 'dashboard' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-               <div className="bg-white/[0.03] p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm hover:bg-white/[0.05] transition-colors relative overflow-hidden group">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
+               <div className="bg-white/[0.03] p-6 md:p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm hover:bg-white/[0.05] transition-colors relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/10 transition-colors"></div>
-                <h3 className="text-slate-400 text-sm font-medium">Total Konten Dibuat</h3>
-                <p className="text-4xl font-bold text-white mt-4 tracking-tight">128</p>
+                <h3 className="text-slate-400 text-xs md:text-sm font-medium">Total Konten Dibuat</h3>
+                <p className="text-3xl md:text-4xl font-bold text-white mt-2 md:mt-4 tracking-tight">128</p>
               </div>
-              <div className="bg-white/[0.03] p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm hover:bg-white/[0.05] transition-colors relative overflow-hidden group">
+              <div className="bg-white/[0.03] p-6 md:p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm hover:bg-white/[0.05] transition-colors relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/10 transition-colors"></div>
-                <h3 className="text-slate-400 text-sm font-medium">Pengeluaran API</h3>
-                <p className="text-4xl font-bold text-white mt-4 tracking-tight">Rp 45k</p>
+                <h3 className="text-slate-400 text-xs md:text-sm font-medium">Pengeluaran API</h3>
+                <p className="text-3xl md:text-4xl font-bold text-white mt-2 md:mt-4 tracking-tight">Rp 45k</p>
               </div>
-              <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 p-8 rounded-3xl border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.1)] relative overflow-hidden">
+              <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 p-6 md:p-8 rounded-3xl border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.1)] relative overflow-hidden sm:col-span-2 md:col-span-1">
                 <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl"></div>
-                <h3 className="text-indigo-300 text-sm font-bold uppercase tracking-wider">Paket Aktif</h3>
-                <p className="text-2xl font-bold text-white mt-4 tracking-tight">Pro Creator</p>
-                <p className="text-sm text-indigo-200/60 mt-2">Aktif s/d 12 Jun 2026</p>
+                <h3 className="text-indigo-300 text-xs md:text-sm font-bold uppercase tracking-wider">Paket Aktif</h3>
+                <p className="text-xl md:text-2xl font-bold text-white mt-2 md:mt-4 tracking-tight">Pro Creator</p>
+                <p className="text-xs md:text-sm text-indigo-200/60 mt-1 md:mt-2">Aktif s/d 12 Jun 2026</p>
               </div>
             </div>
           )}
 
+          {/* TAB: GENERATE TEKS */}
           {activeTab === 'generate' && (
-            <div className="max-w-4xl mx-auto bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl p-10 relative overflow-hidden">
+            <div className="max-w-4xl mx-auto bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl p-6 md:p-10 relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
-              <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
-                <Sparkles className="w-6 h-6 mr-3 text-indigo-400" /> Pilih Arsitektur Konten Teks
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-6 md:mb-8 flex items-center">
+                <Sparkles className="w-5 h-5 md:w-6 md:h-6 mr-3 text-indigo-400" /> Pilih Arsitektur Konten Teks
               </h2>
-              <div className="grid grid-cols-2 gap-4 mb-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-8 md:mb-10">
                 {CONTENT_TYPES.map((type) => (
                   <button 
                     key={type} 
                     onClick={() => setSelectedType(type)}
-                    className={`p-5 rounded-2xl text-left transition-all duration-300 group relative overflow-hidden ${
+                    className={`p-4 md:p-5 rounded-2xl text-left transition-all duration-300 group relative overflow-hidden ${
                       selectedType === type ? 'bg-indigo-500/10 border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]' : 'bg-white/[0.02] border border-white/5 hover:border-white/20 hover:bg-white/[0.04]'
                     }`}
                   >
                     {selectedType === type && <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/5 pointer-events-none"></div>}
-                    <h3 className={`font-semibold relative z-10 tracking-wide ${selectedType === type ? 'text-indigo-300' : 'text-slate-200'}`}>{type}</h3>
-                    <p className="text-xs text-slate-500 mt-2 relative z-10 font-medium">Neural Engine Generation</p>
+                    <h3 className={`font-semibold relative z-10 tracking-wide text-sm md:text-base ${selectedType === type ? 'text-indigo-300' : 'text-slate-200'}`}>{type}</h3>
+                    <p className="text-[10px] md:text-xs text-slate-500 mt-1 md:mt-2 relative z-10 font-medium">Neural Engine Generation</p>
                   </button>
                 ))}
               </div>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-3 ml-1">Konteks & Parameter</label>
+                  <label className="block text-xs md:text-sm font-medium text-slate-400 mb-2 md:mb-3 ml-1">Konteks & Parameter</label>
                   <textarea 
-                    className="w-full h-40 p-6 bg-black/60 border border-white/10 rounded-2xl focus:border-indigo-500/50 outline-none transition-all resize-none text-slate-200 placeholder:text-slate-600 shadow-inner"
+                    className="w-full h-32 md:h-40 p-4 md:p-6 bg-black/60 border border-white/10 rounded-2xl focus:border-indigo-500/50 outline-none transition-all resize-none text-slate-200 placeholder:text-slate-600 shadow-inner text-sm md:text-base"
                     placeholder="Masukkan instruksi brutal lu di sini..."
                     value={promptInput}
                     onChange={(e) => setPromptInput(e.target.value)}
@@ -415,22 +451,22 @@ function App() {
                   <button 
                     onClick={handleGenerateText}
                     disabled={isGenerating}
-                    className="relative group overflow-hidden bg-white text-black font-bold py-4 px-10 rounded-2xl flex items-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                    className="w-full sm:w-auto relative group overflow-hidden bg-white text-black font-bold py-3.5 md:py-4 px-8 md:px-10 rounded-2xl flex items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></div>
-                    {isGenerating ? <Loader2 className="w-5 h-5 mr-3 animate-spin text-black group-hover:text-white relative z-10" /> : <Zap className="w-5 h-5 mr-3 text-black group-hover:text-white relative z-10" />} 
-                    <span className="relative z-10 group-hover:text-white transition-colors duration-300">{isGenerating ? 'Synthesizing...' : 'Initialize AI'}</span>
+                    {isGenerating ? <Loader2 className="w-5 h-5 mr-2 md:mr-3 animate-spin text-black group-hover:text-white relative z-10" /> : <Zap className="w-5 h-5 mr-2 md:mr-3 text-black group-hover:text-white relative z-10" />} 
+                    <span className="relative z-10 group-hover:text-white transition-colors duration-300 text-sm md:text-base">{isGenerating ? 'Synthesizing...' : 'Initialize AI'}</span>
                   </button>
                 </div>
                 {generatedContent && (
-                  <div className="mt-10 pt-10 border-t border-white/10 animate-in fade-in duration-700">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="font-bold text-xl text-white flex items-center"><span className="w-2 h-2 bg-indigo-500 rounded-full mr-3 shadow-[0_0_10px_rgba(99,102,241,0.8)]"></span>Output Result</h3>
-                      <button onClick={handleCopy} className={`flex items-center text-sm font-medium px-4 py-2 rounded-xl transition-all ${isCopied ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-white/5 text-slate-300 border border-white/5'}`}>
+                  <div className="mt-8 md:mt-10 pt-8 md:pt-10 border-t border-white/10 animate-in fade-in duration-700">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                      <h3 className="font-bold text-lg md:text-xl text-white flex items-center"><span className="w-2 h-2 bg-indigo-500 rounded-full mr-3 shadow-[0_0_10px_rgba(99,102,241,0.8)]"></span>Output Result</h3>
+                      <button onClick={handleCopy} className={`flex items-center justify-center text-xs md:text-sm font-medium px-4 py-2.5 rounded-xl transition-all ${isCopied ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-white/5 text-slate-300 border border-white/5 hover:bg-white/10'}`}>
                         {isCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />} {isCopied ? 'Copied' : 'Copy Output'}
                       </button>
                     </div>
-                    <div className="bg-black/50 p-8 rounded-2xl border border-white/5 whitespace-pre-wrap text-slate-300 leading-relaxed">{generatedContent}</div>
+                    <div className="bg-black/50 p-5 md:p-8 rounded-2xl border border-white/5 whitespace-pre-wrap text-slate-300 leading-relaxed text-sm md:text-base overflow-x-auto">{generatedContent}</div>
                   </div>
                 )}
               </div>
@@ -440,7 +476,8 @@ function App() {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        @media (min-width: 768px) { .custom-scrollbar::-webkit-scrollbar { width: 8px; } }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
