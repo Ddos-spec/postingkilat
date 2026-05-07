@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   PenTool, 
@@ -15,7 +15,10 @@ import {
   SlidersHorizontal,
   Download,
   Menu,
-  X
+  X,
+  Send,
+  User,
+  Bot
 } from 'lucide-react';
 
 const CONTENT_TYPES = [
@@ -31,7 +34,7 @@ const ART_STYLES = ['Cinematic', 'Photorealistic', 'Digital Art', 'Anime', 'Cybe
 const ASPECT_RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:4'];
 
 function App() {
-  const [activeTab, setActiveTab] = useState('image-studio');
+  const [activeTab, setActiveTab] = useState('generate');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // State form Teks
@@ -42,7 +45,7 @@ function App() {
   const [isCopied, setIsCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // State form Gambar (Advanced Config)
+  // State form Gambar
   const [imagePrompt, setImagePrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
   const [artStyle, setArtStyle] = useState('Cinematic');
@@ -50,6 +53,28 @@ function App() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(true);
+
+  // State Chat Assistant
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'ai', content: 'Halo Bos! Ada yang bisa dibantu hari ini? Gua siap ngerjain tugas apa aja.' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatting, setIsChatting] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // State Settings
+  const [apiKey, setApiKey] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    // Scroll chat ke bawah tiap ada pesan baru
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
+
+  useEffect(() => {
+    // Load API Key dari env pas awal (hanya visualisasi)
+    setApiKey(import.meta.env.VITE_OPENROUTER_API_KEY || '');
+  }, []);
 
   const handleGenerateText = async () => {
     if (!promptInput.trim()) {
@@ -63,17 +88,17 @@ function App() {
     setIsCopied(false);
 
     try {
-      const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-      if (!apiKey) throw new Error("API Key OpenRouter belum diset di file .env");
+      const currentKey = apiKey || import.meta.env.VITE_OPENROUTER_API_KEY;
+      if (!currentKey) throw new Error("API Key OpenRouter belum diset! Isi di menu Settings.");
 
       const systemPrompt = `Lu adalah asisten AI profesional spesialis pembuat konten. Buatkan konten dengan tipe "${selectedType}" berdasarkan instruksi berikut. Gunakan bahasa Indonesia yang luwes dan sesuai konteks.`;
       
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
+          "Authorization": `Bearer ${currentKey}`,
           "HTTP-Referer": "http://localhost:5173",
-          "X-Title": "KontenKilat AI Local Testing",
+          "X-Title": "KontenKilat AI",
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
@@ -104,12 +129,9 @@ function App() {
     setIsGeneratingImage(true);
     setGeneratedImageUrl('');
 
-    // Simulasi loading AI Image Generation (karena OpenRouter text-based, kita simulasi UI-nya dulu)
-    // Di produksi asli, ini nembak endpoint image generation (kayak midjourney/dalle via API)
     setTimeout(() => {
-      // Dummy high-quality image buat showcase UI
-      let dummyImg = "https://images.unsplash.com/photo-1682687982501-1e58e813fc2b?q=80&w=2070&auto=format&fit=crop"; // Cinematic Landscape default
-      if (aspectRatio === '9:16') dummyImg = "https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?q=80&w=1974&auto=format&fit=crop"; // Portrait
+      let dummyImg = "https://images.unsplash.com/photo-1682687982501-1e58e813fc2b?q=80&w=2070&auto=format&fit=crop"; 
+      if (aspectRatio === '9:16') dummyImg = "https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?q=80&w=1974&auto=format&fit=crop"; 
       if (artStyle === 'Cyberpunk') dummyImg = "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=2187&auto=format&fit=crop";
       
       setGeneratedImageUrl(dummyImg);
@@ -117,19 +139,65 @@ function App() {
     }, 3500);
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(generatedContent);
+  const handleSendMessage = async () => {
+    if (!chatInput.trim()) return;
+    
+    const newUserMsg = { role: 'user', content: chatInput };
+    setChatMessages(prev => [...prev, newUserMsg]);
+    setChatInput('');
+    setIsChatting(true);
+
+    try {
+      const currentKey = apiKey || import.meta.env.VITE_OPENROUTER_API_KEY;
+      if (!currentKey) throw new Error("API Key belum diset.");
+
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${currentKey}`,
+          "HTTP-Referer": "http://localhost:5173",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {"role": "system", "content": "Lu adalah asisten serba bisa yang pinter, blak-blakan, dan asik diajak ngobrol. Panggil user dengan sebutan 'Bos'. Gaya bahasa lu luwes ala anak tongkrongan."},
+            ...chatMessages.map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content })),
+            { role: "user", content: chatInput }
+          ],
+        })
+      });
+
+      if (!response.ok) throw new Error('Error dari API.');
+      const data = await response.json();
+      
+      setChatMessages(prev => [...prev, { role: 'ai', content: data.choices[0].message.content }]);
+    } catch (err: any) {
+      setChatMessages(prev => [...prev, { role: 'ai', content: `Waduh Bos, ada error nih: ${err.message}` }]);
+    } finally {
+      setIsChatting(false);
+    }
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
 
+  const handleSaveSettings = () => {
+    // Di real app, simpan ke database / localstorage
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
+  }
+
   const handleMenuClick = (tab: string) => {
     setActiveTab(tab);
-    setIsMobileMenuOpen(false); // Auto close menu on mobile after selection
+    setIsMobileMenuOpen(false);
   }
 
   return (
-    <div className="flex h-screen bg-[#050505] font-sans text-slate-300 selection:bg-indigo-500/30 overflow-hidden relative">
+    <div className="flex h-screen bg-[#050505] font-sans text-slate-200 selection:bg-indigo-500/30 overflow-hidden relative">
       {/* Ambient background glows */}
       <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
@@ -155,7 +223,7 @@ function App() {
             </span>
           </div>
           <button 
-            className="md:hidden text-slate-400 hover:text-white transition-colors"
+            className="md:hidden text-slate-300 hover:text-white transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <X className="w-6 h-6" />
@@ -165,32 +233,35 @@ function App() {
         <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
           <button 
             onClick={() => handleMenuClick('dashboard')}
-            className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'dashboard' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+            className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'dashboard' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
           >
             <LayoutDashboard className="w-5 h-5 mr-3" /> Dashboard
           </button>
           <button 
             onClick={() => handleMenuClick('generate')}
-            className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'generate' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+            className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'generate' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
           >
             <PenTool className="w-5 h-5 mr-3" /> AI Generator Teks
           </button>
           <button 
             onClick={() => handleMenuClick('image-studio')}
-            className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'image-studio' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+            className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'image-studio' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
           >
             <ImageIcon className="w-5 h-5 mr-3" /> Studio Gambar AI
           </button>
-          <button className="w-full flex items-center px-4 py-3.5 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-300">
+          <button 
+            onClick={() => handleMenuClick('chat')}
+            className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'chat' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+          >
             <MessageSquare className="w-5 h-5 mr-3" /> Chat Assistant
           </button>
         </nav>
 
         <div className="p-6 border-t border-white/5 bg-black/20">
           <div className="bg-white/[0.03] p-4 rounded-2xl mb-6 border border-white/5 shadow-inner">
-            <p className="text-xs text-slate-400 font-medium mb-1">Sisa Token AI</p>
+            <p className="text-xs text-slate-300 font-medium mb-1">Sisa Token AI</p>
             <div className="flex items-end justify-between mb-3">
-              <span className="text-xl font-bold text-white tracking-tight">4,250 <span className="text-xs font-normal text-slate-500">kata</span></span>
+              <span className="text-xl font-bold text-white tracking-tight">4,250 <span className="text-xs font-normal text-slate-400">kata</span></span>
               <button className="text-indigo-400 hover:text-indigo-300 p-1 transition-colors">
                 <CreditCard className="w-4 h-4" />
               </button>
@@ -202,10 +273,13 @@ function App() {
             </div>
           </div>
           
-          <button className="w-full flex items-center px-4 py-2.5 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5">
+          <button 
+            onClick={() => handleMenuClick('settings')}
+            className={`w-full flex items-center px-4 py-2.5 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+          >
             <Settings className="w-5 h-5 mr-3" /> Settings
           </button>
-          <button className="w-full flex items-center px-4 py-2.5 text-slate-400 hover:text-red-400 transition-colors mt-1 rounded-lg hover:bg-red-500/10">
+          <button className="w-full flex items-center px-4 py-2.5 text-slate-300 hover:text-red-400 transition-colors mt-1 rounded-lg hover:bg-red-500/10">
             <LogOut className="w-5 h-5 mr-3" /> Logout
           </button>
         </div>
@@ -216,7 +290,7 @@ function App() {
         <header className="h-20 bg-white/[0.01] border-b border-white/5 flex items-center justify-between px-4 md:px-10 backdrop-blur-md">
           <div className="flex items-center">
             <button 
-              className="md:hidden mr-3 text-slate-300 hover:text-white p-2 bg-white/5 rounded-lg border border-white/10"
+              className="md:hidden mr-3 text-slate-200 hover:text-white p-2 bg-white/5 rounded-lg border border-white/10"
               onClick={() => setIsMobileMenuOpen(true)}
             >
               <Menu className="w-6 h-6" />
@@ -225,6 +299,8 @@ function App() {
               {activeTab === 'dashboard' && 'Overview'}
               {activeTab === 'generate' && 'AI Generator Teks'}
               {activeTab === 'image-studio' && 'Studio Gambar AI'}
+              {activeTab === 'chat' && 'Chat Assistant'}
+              {activeTab === 'settings' && 'System Settings'}
             </h1>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
@@ -239,10 +315,106 @@ function App() {
         </header>
 
         <div className="flex-1 overflow-auto p-4 md:p-10 custom-scrollbar">
-          {errorMsg && (
-            <div className="max-w-5xl mx-auto mb-6 md:mb-8 p-4 bg-red-950/50 text-red-400 rounded-2xl border border-red-900/50 flex items-center text-sm md:text-base">
-              <div className="w-2 h-2 bg-red-500 rounded-full mr-3 animate-pulse flex-shrink-0"></div>
-              {errorMsg}
+          
+          {/* TAB: CHAT ASSISTANT */}
+          {activeTab === 'chat' && (
+            <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+              
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`flex max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-end`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mb-1 ${msg.role === 'user' ? 'ml-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white' : 'mr-3 bg-white/10 text-indigo-400 border border-white/10'}`}>
+                        {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      </div>
+                      <div className={`px-5 py-4 rounded-2xl shadow-md ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white/[0.05] border border-white/10 text-slate-200 rounded-bl-sm'}`}>
+                        <p className="leading-relaxed whitespace-pre-wrap text-sm md:text-base">{msg.content}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {isChatting && (
+                  <div className="flex justify-start">
+                    <div className="flex flex-row items-end">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mb-1 mr-3 bg-white/10 text-indigo-400 border border-white/10">
+                         <Bot className="w-4 h-4" />
+                      </div>
+                      <div className="px-5 py-4 rounded-2xl bg-white/[0.05] border border-white/10 text-slate-200 rounded-bl-sm flex items-center gap-2">
+                        <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></span>
+                        <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                        <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              <div className="p-4 bg-white/[0.02] border-t border-white/10">
+                <div className="relative flex items-center max-w-4xl mx-auto">
+                  <input 
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Tanya apa aja ke AI..."
+                    className="w-full bg-black/50 border border-white/10 text-white rounded-full py-4 pl-6 pr-14 outline-none focus:border-indigo-500/50 shadow-inner"
+                    disabled={isChatting}
+                  />
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={!chatInput.trim() || isChatting}
+                    className="absolute right-2 p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full transition-colors disabled:opacity-50 disabled:hover:bg-indigo-600"
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: SETTINGS */}
+          {activeTab === 'settings' && (
+            <div className="max-w-3xl mx-auto space-y-8">
+              <div className="bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl p-8 relative overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center">
+                  <Zap className="w-5 h-5 mr-3 text-indigo-400" /> Konfigurasi API
+                </h2>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">OpenRouter API Key</label>
+                    <input 
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="w-full p-4 bg-black/60 border border-white/10 rounded-xl focus:border-indigo-500/50 outline-none text-slate-200 shadow-inner placeholder:text-slate-600"
+                      placeholder="sk-or-v1-..."
+                    />
+                    <p className="text-xs text-slate-400 mt-2">Key ini dipake buat fitur Generate Konten & Chat. Dapet dari <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">openrouter.ai</a></p>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-white/5">
+                    <button 
+                      onClick={handleSaveSettings}
+                      className="bg-white text-black font-bold py-3 px-8 rounded-xl flex items-center transition-all hover:bg-indigo-100"
+                    >
+                      {isSaved ? <CheckCircle2 className="w-5 h-5 mr-2 text-green-600" /> : <Settings className="w-5 h-5 mr-2" />}
+                      {isSaved ? 'Tersimpan!' : 'Simpan Pengaturan'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-red-950/20 backdrop-blur-xl rounded-3xl border border-red-900/30 p-8">
+                <h2 className="text-xl font-bold text-red-400 mb-4">Danger Zone</h2>
+                <p className="text-slate-400 text-sm mb-6">Aksi di area ini nggak bisa dibalikin. Hati-hati Bos.</p>
+                <button className="border border-red-500/50 text-red-400 hover:bg-red-500/10 font-bold py-3 px-8 rounded-xl transition-all">
+                  Hapus Semua Riwayat Chat & Konten
+                </button>
+              </div>
             </div>
           )}
 
@@ -261,9 +433,9 @@ function App() {
 
                   <div className="space-y-5">
                     <div>
-                      <label className="block text-sm font-medium text-slate-400 mb-2">Main Prompt</label>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Main Prompt</label>
                       <textarea 
-                        className="w-full h-32 p-4 bg-white/[0.02] border border-white/10 rounded-2xl focus:border-indigo-500/50 focus:bg-white/[0.05] outline-none transition-all resize-none text-slate-200 placeholder:text-slate-600 shadow-inner text-sm md:text-base"
+                        className="w-full h-32 p-4 bg-white/[0.02] border border-white/10 rounded-2xl focus:border-indigo-500/50 focus:bg-white/[0.05] outline-none transition-all resize-none text-slate-200 placeholder:text-slate-500 shadow-inner text-sm md:text-base"
                         placeholder="Deskripsikan gambar dengan detail... (cth: a futuristic cyberpunk city with neon lights)"
                         value={imagePrompt}
                         onChange={(e) => setImagePrompt(e.target.value)}
@@ -280,15 +452,15 @@ function App() {
                           <SlidersHorizontal className="w-4 h-4 mr-2" />
                           Advanced Configuration
                         </label>
-                        <span className="text-xs text-slate-500 bg-white/5 px-2 py-1 rounded-md hidden md:inline-block">Pro</span>
+                        <span className="text-xs text-slate-300 bg-white/10 px-2 py-1 rounded-md hidden md:inline-block">Pro</span>
                       </div>
                       
                       {showAdvanced && (
                         <div className="mt-4 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
                           <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-2">Negative Prompt (Hindari ini)</label>
+                            <label className="block text-xs font-medium text-slate-300 mb-2">Negative Prompt (Hindari ini)</label>
                             <textarea 
-                              className="w-full h-20 p-3 bg-red-900/10 border border-red-900/30 rounded-xl focus:border-red-500/50 outline-none transition-all resize-none text-slate-300 placeholder:text-slate-700 text-sm shadow-inner"
+                              className="w-full h-20 p-3 bg-red-900/10 border border-red-900/30 rounded-xl focus:border-red-500/50 outline-none transition-all resize-none text-slate-200 placeholder:text-red-900/50 text-sm shadow-inner"
                               placeholder="ugly, blurry, deformed, low quality, text, watermark..."
                               value={negativePrompt}
                               onChange={(e) => setNegativePrompt(e.target.value)}
@@ -298,14 +470,14 @@ function App() {
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-xs font-medium text-slate-500 mb-2">Aspect Ratio</label>
+                              <label className="block text-xs font-medium text-slate-300 mb-2">Aspect Ratio</label>
                               <div className="grid grid-cols-4 sm:grid-cols-2 gap-2">
                                 {ASPECT_RATIOS.slice(0,4).map(ratio => (
                                   <button
                                     key={ratio}
                                     onClick={() => setAspectRatio(ratio)}
                                     className={`py-2 text-xs font-medium rounded-lg border transition-all ${
-                                      aspectRatio === ratio ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10'
+                                      aspectRatio === ratio ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'bg-white/5 border-transparent text-slate-300 hover:bg-white/10'
                                     }`}
                                   >
                                     {ratio}
@@ -314,11 +486,11 @@ function App() {
                               </div>
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-slate-500 mb-2">Art Style</label>
+                              <label className="block text-xs font-medium text-slate-300 mb-2">Art Style</label>
                               <select 
                                 value={artStyle}
                                 onChange={(e) => setArtStyle(e.target.value)}
-                                className="w-full bg-[#111] border border-white/10 text-slate-300 text-sm rounded-lg p-2.5 outline-none focus:border-indigo-500/50"
+                                className="w-full bg-[#111] border border-white/10 text-slate-200 text-sm rounded-lg p-2.5 outline-none focus:border-indigo-500/50"
                               >
                                 {ART_STYLES.map(style => (
                                   <option key={style} value={style}>{style}</option>
@@ -362,7 +534,7 @@ function App() {
                         <div className="absolute inset-4 bg-indigo-500/20 rounded-full blur-md animate-pulse"></div>
                       </div>
                       <h3 className="text-indigo-300 font-bold tracking-widest uppercase text-xs md:text-sm animate-pulse">Synthesizing Pixels</h3>
-                      <p className="text-slate-500 text-[10px] md:text-xs mt-2">Applying {artStyle} style filters...</p>
+                      <p className="text-slate-400 text-[10px] md:text-xs mt-2">Applying {artStyle} style filters...</p>
                     </div>
                   ) : generatedImageUrl ? (
                     <div className="w-full h-full p-2 relative group/img animate-in zoom-in-95 duration-500">
@@ -374,7 +546,7 @@ function App() {
                       <div className="absolute inset-2 bg-gradient-to-t from-black/80 via-transparent to-transparent rounded-2xl opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-end justify-between p-4 md:p-6">
                         <div>
                           <p className="text-white font-bold text-xs md:text-sm">{artStyle} • {aspectRatio}</p>
-                          <p className="text-slate-300 text-[10px] md:text-xs mt-1 line-clamp-1 max-w-[200px] md:max-w-md">{imagePrompt}</p>
+                          <p className="text-slate-200 text-[10px] md:text-xs mt-1 line-clamp-1 max-w-[200px] md:max-w-md">{imagePrompt}</p>
                         </div>
                         <button className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-2 md:p-3 rounded-xl transition-all hover:scale-110">
                           <Download className="w-4 h-4 md:w-5 md:h-5" />
@@ -383,8 +555,8 @@ function App() {
                     </div>
                   ) : (
                     <div className="flex-1 flex flex-col items-center justify-center relative z-10 opacity-50 p-6 text-center">
-                      <ImageIcon className="w-12 h-12 md:w-16 md:h-16 text-slate-600 mb-4" />
-                      <p className="text-slate-500 text-xs md:text-sm">Waiting for prompt input to initialize rendering engine...</p>
+                      <ImageIcon className="w-12 h-12 md:w-16 md:h-16 text-slate-400 mb-4" />
+                      <p className="text-slate-300 text-xs md:text-sm">Waiting for prompt input to initialize rendering engine...</p>
                     </div>
                   )}
                 </div>
@@ -397,19 +569,19 @@ function App() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
                <div className="bg-white/[0.03] p-6 md:p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm hover:bg-white/[0.05] transition-colors relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/10 transition-colors"></div>
-                <h3 className="text-slate-400 text-xs md:text-sm font-medium">Total Konten Dibuat</h3>
+                <h3 className="text-slate-300 text-xs md:text-sm font-medium">Total Konten Dibuat</h3>
                 <p className="text-3xl md:text-4xl font-bold text-white mt-2 md:mt-4 tracking-tight">128</p>
               </div>
               <div className="bg-white/[0.03] p-6 md:p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm hover:bg-white/[0.05] transition-colors relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/10 transition-colors"></div>
-                <h3 className="text-slate-400 text-xs md:text-sm font-medium">Pengeluaran API</h3>
+                <h3 className="text-slate-300 text-xs md:text-sm font-medium">Pengeluaran API</h3>
                 <p className="text-3xl md:text-4xl font-bold text-white mt-2 md:mt-4 tracking-tight">Rp 45k</p>
               </div>
               <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 p-6 md:p-8 rounded-3xl border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.1)] relative overflow-hidden sm:col-span-2 md:col-span-1">
                 <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl"></div>
                 <h3 className="text-indigo-300 text-xs md:text-sm font-bold uppercase tracking-wider">Paket Aktif</h3>
                 <p className="text-xl md:text-2xl font-bold text-white mt-2 md:mt-4 tracking-tight">Pro Creator</p>
-                <p className="text-xs md:text-sm text-indigo-200/60 mt-1 md:mt-2">Aktif s/d 12 Jun 2026</p>
+                <p className="text-xs md:text-sm text-indigo-200/80 mt-1 md:mt-2">Aktif s/d 12 Jun 2026</p>
               </div>
             </div>
           )}
@@ -421,6 +593,14 @@ function App() {
               <h2 className="text-xl md:text-2xl font-bold text-white mb-6 md:mb-8 flex items-center">
                 <Sparkles className="w-5 h-5 md:w-6 md:h-6 mr-3 text-indigo-400" /> Pilih Arsitektur Konten Teks
               </h2>
+              
+              {errorMsg && (
+                <div className="mb-6 md:mb-8 p-4 bg-red-950/50 text-red-400 rounded-2xl border border-red-900/50 flex items-center text-sm md:text-base">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mr-3 animate-pulse flex-shrink-0"></div>
+                  {errorMsg}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-8 md:mb-10">
                 {CONTENT_TYPES.map((type) => (
                   <button 
@@ -432,15 +612,15 @@ function App() {
                   >
                     {selectedType === type && <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/5 pointer-events-none"></div>}
                     <h3 className={`font-semibold relative z-10 tracking-wide text-sm md:text-base ${selectedType === type ? 'text-indigo-300' : 'text-slate-200'}`}>{type}</h3>
-                    <p className="text-[10px] md:text-xs text-slate-500 mt-1 md:mt-2 relative z-10 font-medium">Neural Engine Generation</p>
+                    <p className="text-[10px] md:text-xs text-slate-400 mt-1 md:mt-2 relative z-10 font-medium">Neural Engine Generation</p>
                   </button>
                 ))}
               </div>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-slate-400 mb-2 md:mb-3 ml-1">Konteks & Parameter</label>
+                  <label className="block text-xs md:text-sm font-medium text-slate-300 mb-2 md:mb-3 ml-1">Konteks & Parameter</label>
                   <textarea 
-                    className="w-full h-32 md:h-40 p-4 md:p-6 bg-black/60 border border-white/10 rounded-2xl focus:border-indigo-500/50 outline-none transition-all resize-none text-slate-200 placeholder:text-slate-600 shadow-inner text-sm md:text-base"
+                    className="w-full h-32 md:h-40 p-4 md:p-6 bg-black/60 border border-white/10 rounded-2xl focus:border-indigo-500/50 outline-none transition-all resize-none text-slate-200 placeholder:text-slate-500 shadow-inner text-sm md:text-base"
                     placeholder="Masukkan instruksi brutal lu di sini..."
                     value={promptInput}
                     onChange={(e) => setPromptInput(e.target.value)}
@@ -462,11 +642,11 @@ function App() {
                   <div className="mt-8 md:mt-10 pt-8 md:pt-10 border-t border-white/10 animate-in fade-in duration-700">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                       <h3 className="font-bold text-lg md:text-xl text-white flex items-center"><span className="w-2 h-2 bg-indigo-500 rounded-full mr-3 shadow-[0_0_10px_rgba(99,102,241,0.8)]"></span>Output Result</h3>
-                      <button onClick={handleCopy} className={`flex items-center justify-center text-xs md:text-sm font-medium px-4 py-2.5 rounded-xl transition-all ${isCopied ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-white/5 text-slate-300 border border-white/5 hover:bg-white/10'}`}>
+                      <button onClick={() => handleCopy(generatedContent)} className={`flex items-center justify-center text-xs md:text-sm font-medium px-4 py-2.5 rounded-xl transition-all ${isCopied ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-white/5 text-slate-300 border border-white/5 hover:bg-white/10'}`}>
                         {isCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />} {isCopied ? 'Copied' : 'Copy Output'}
                       </button>
                     </div>
-                    <div className="bg-black/50 p-5 md:p-8 rounded-2xl border border-white/5 whitespace-pre-wrap text-slate-300 leading-relaxed text-sm md:text-base overflow-x-auto">{generatedContent}</div>
+                    <div className="bg-black/50 p-5 md:p-8 rounded-2xl border border-white/5 whitespace-pre-wrap text-slate-200 leading-relaxed text-sm md:text-base overflow-x-auto">{generatedContent}</div>
                   </div>
                 )}
               </div>
@@ -479,8 +659,8 @@ function App() {
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         @media (min-width: 768px) { .custom-scrollbar::-webkit-scrollbar { width: 8px; } }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
       `}} />
     </div>
   );
