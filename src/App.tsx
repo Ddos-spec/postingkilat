@@ -10,7 +10,10 @@ import {
   CreditCard,
   Loader2,
   Copy,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles,
+  SlidersHorizontal,
+  Download
 } from 'lucide-react';
 
 const CONTENT_TYPES = [
@@ -22,10 +25,13 @@ const CONTENT_TYPES = [
   'Script Video'
 ];
 
+const ART_STYLES = ['Cinematic', 'Photorealistic', 'Digital Art', 'Anime', 'Cyberpunk', 'Minimalist'];
+const ASPECT_RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:4'];
+
 function App() {
-  const [activeTab, setActiveTab] = useState('generate'); // Default ke generate buat testing
+  const [activeTab, setActiveTab] = useState('image-studio');
   
-  // State untuk form generate
+  // State form Teks
   const [selectedType, setSelectedType] = useState('Caption Instagram');
   const [promptInput, setPromptInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -33,7 +39,16 @@ function App() {
   const [isCopied, setIsCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleGenerate = async () => {
+  // State form Gambar (Advanced Config)
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [negativePrompt, setNegativePrompt] = useState('');
+  const [artStyle, setArtStyle] = useState('Cinematic');
+  const [aspectRatio, setAspectRatio] = useState('16:9');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(true);
+
+  const handleGenerateText = async () => {
     if (!promptInput.trim()) {
       setErrorMsg('Topik atau kata kunci nggak boleh kosong, Bos!');
       return;
@@ -46,10 +61,7 @@ function App() {
 
     try {
       const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-      
-      if (!apiKey) {
-        throw new Error("API Key OpenRouter belum diset di file .env (VITE_OPENROUTER_API_KEY)");
-      }
+      if (!apiKey) throw new Error("API Key OpenRouter belum diset di file .env");
 
       const systemPrompt = `Lu adalah asisten AI profesional spesialis pembuat konten. Buatkan konten dengan tipe "${selectedType}" berdasarkan instruksi berikut. Gunakan bahasa Indonesia yang luwes dan sesuai konteks.`;
       
@@ -57,12 +69,12 @@ function App() {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": "http://localhost:5173", // Site URL
-          "X-Title": "KontenKilat AI Local Testing", // Site Name
+          "HTTP-Referer": "http://localhost:5173",
+          "X-Title": "KontenKilat AI Local Testing",
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash", // Pakai model yg lumayan cepat dan pintar sbg default
+          model: "google/gemini-2.5-flash",
           messages: [
             {"role": "system", "content": systemPrompt},
             {"role": "user", "content": promptInput}
@@ -70,19 +82,36 @@ function App() {
         })
       });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error?.message || 'Gagal generate konten dari OpenRouter.');
-      }
-
+      if (!response.ok) throw new Error('Gagal generate konten dari OpenRouter.');
       const data = await response.json();
       setGeneratedContent(data.choices[0].message.content);
-      
     } catch (err: any) {
       setErrorMsg(err.message);
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!imagePrompt.trim()) {
+      setErrorMsg('Prompt gambar nggak boleh kosong, Bos!');
+      return;
+    }
+    setErrorMsg('');
+    setIsGeneratingImage(true);
+    setGeneratedImageUrl('');
+
+    // Simulasi loading AI Image Generation (karena OpenRouter text-based, kita simulasi UI-nya dulu)
+    // Di produksi asli, ini nembak endpoint image generation (kayak midjourney/dalle via API)
+    setTimeout(() => {
+      // Dummy high-quality image buat showcase UI
+      let dummyImg = "https://images.unsplash.com/photo-1682687982501-1e58e813fc2b?q=80&w=2070&auto=format&fit=crop"; // Cinematic Landscape default
+      if (aspectRatio === '9:16') dummyImg = "https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?q=80&w=1974&auto=format&fit=crop"; // Portrait
+      if (artStyle === 'Cyberpunk') dummyImg = "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=2187&auto=format&fit=crop";
+      
+      setGeneratedImageUrl(dummyImg);
+      setIsGeneratingImage(false);
+    }, 3500);
   };
 
   const handleCopy = () => {
@@ -92,152 +121,316 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="flex h-screen bg-[#050505] font-sans text-slate-300 selection:bg-indigo-500/30 overflow-hidden relative">
+      {/* Ambient background glows */}
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+
       {/* SIDEBAR */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-slate-200">
-          <Zap className="w-6 h-6 text-indigo-600 mr-2" />
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
+      <aside className="w-72 bg-white/[0.02] border-r border-white/5 flex flex-col backdrop-blur-xl z-10">
+        <div className="h-20 flex items-center px-8 border-b border-white/5">
+          <div className="relative mr-3">
+            <div className="absolute inset-0 bg-indigo-500 blur-md opacity-50"></div>
+            <Zap className="w-7 h-7 text-indigo-400 relative z-10" />
+          </div>
+          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400 tracking-tight">
             KontenKilat AI
           </span>
         </div>
         
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
           <button 
             onClick={() => setActiveTab('dashboard')}
-            className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'dashboard' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
           >
             <LayoutDashboard className="w-5 h-5 mr-3" /> Dashboard
           </button>
           <button 
             onClick={() => setActiveTab('generate')}
-            className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${activeTab === 'generate' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'generate' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
           >
-            <PenTool className="w-5 h-5 mr-3" /> Generate Konten
+            <PenTool className="w-5 h-5 mr-3" /> AI Generator Teks
           </button>
-          <button className="w-full flex items-center px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
-            <ImageIcon className="w-5 h-5 mr-3" /> Studio Gambar
+          <button 
+            onClick={() => setActiveTab('image-studio')}
+            className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 ${activeTab === 'image-studio' ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/10 text-white shadow-[inset_0px_1px_1px_rgba(255,255,255,0.1)] border border-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <ImageIcon className="w-5 h-5 mr-3" /> Studio Gambar AI
           </button>
-          <button className="w-full flex items-center px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+          <button className="w-full flex items-center px-4 py-3.5 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-300">
             <MessageSquare className="w-5 h-5 mr-3" /> Chat Assistant
           </button>
         </nav>
 
-        <div className="p-4 border-t border-slate-200">
-          <div className="bg-slate-50 p-4 rounded-xl mb-4 border border-slate-200">
-            <p className="text-xs text-slate-500 font-medium mb-1">Sisa Kuota AI</p>
-            <div className="flex items-end justify-between">
-              <span className="text-lg font-bold text-slate-800">4,250 <span className="text-xs font-normal">kata</span></span>
-              <button className="text-indigo-600 hover:text-indigo-700 p-1">
+        <div className="p-6 border-t border-white/5 bg-black/20">
+          <div className="bg-white/[0.03] p-4 rounded-2xl mb-6 border border-white/5 shadow-inner">
+            <p className="text-xs text-slate-400 font-medium mb-1">Sisa Token AI</p>
+            <div className="flex items-end justify-between mb-3">
+              <span className="text-xl font-bold text-white tracking-tight">4,250 <span className="text-xs font-normal text-slate-500">kata</span></span>
+              <button className="text-indigo-400 hover:text-indigo-300 p-1 transition-colors">
                 <CreditCard className="w-4 h-4" />
               </button>
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
-              <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: '45%' }}></div>
+            <div className="w-full bg-slate-800/50 rounded-full h-1.5 overflow-hidden">
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full relative" style={{ width: '45%' }}>
+                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+              </div>
             </div>
           </div>
           
-          <button className="w-full flex items-center px-4 py-2 text-slate-600 hover:text-red-600 transition-colors">
+          <button className="w-full flex items-center px-4 py-2.5 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5">
             <Settings className="w-5 h-5 mr-3" /> Settings
-          </button>
-          <button className="w-full flex items-center px-4 py-2 text-slate-600 hover:text-red-600 transition-colors mt-1">
-            <LogOut className="w-5 h-5 mr-3" /> Logout
           </button>
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {/* HEADER */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
-          <h1 className="text-2xl font-bold text-slate-800">
-            {activeTab === 'dashboard' ? 'Overview' : 'AI Generator Studio'}
+      <main className="flex-1 flex flex-col z-10 relative">
+        <header className="h-20 bg-white/[0.01] border-b border-white/5 flex items-center justify-between px-10 backdrop-blur-md">
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            {activeTab === 'dashboard' && 'Overview'}
+            {activeTab === 'generate' && 'AI Generator Teks'}
+            {activeTab === 'image-studio' && 'Studio Gambar AI'}
           </h1>
           <div className="flex items-center gap-4">
-            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
+            <div className="px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-300 text-sm font-medium flex items-center shadow-[0_0_10px_rgba(99,102,241,0.1)]">
+              <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+              Pro Network
+            </div>
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg border border-white/10 ring-2 ring-black cursor-pointer hover:scale-105 transition-transform">
               FA
             </div>
           </div>
         </header>
 
-        {/* SCROLLABLE AREA */}
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-10 custom-scrollbar">
+          {errorMsg && (
+            <div className="max-w-5xl mx-auto mb-8 p-4 bg-red-950/50 text-red-400 rounded-2xl border border-red-900/50 flex items-center">
+              <div className="w-2 h-2 bg-red-500 rounded-full mr-3 animate-pulse"></div>
+              {errorMsg}
+            </div>
+          )}
+
+          {/* TAB: IMAGE STUDIO */}
+          {activeTab === 'image-studio' && (
+            <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Left Column: Settings */}
+              <div className="lg:col-span-5 space-y-6">
+                <div className="bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl p-8 relative overflow-hidden">
+                  <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+                  
+                  <h2 className="text-xl font-bold text-white mb-6 flex items-center">
+                    <Sparkles className="w-5 h-5 mr-3 text-indigo-400" />
+                    Prompt Engineering
+                  </h2>
+
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-400 mb-2">Main Prompt</label>
+                      <textarea 
+                        className="w-full h-32 p-4 bg-white/[0.02] border border-white/10 rounded-2xl focus:border-indigo-500/50 focus:bg-white/[0.05] outline-none transition-all resize-none text-slate-200 placeholder:text-slate-600 shadow-inner"
+                        placeholder="Deskripsikan gambar dengan detail... (cth: a futuristic cyberpunk city with neon lights, 8k resolution, ultra detailed)"
+                        value={imagePrompt}
+                        onChange={(e) => setImagePrompt(e.target.value)}
+                        disabled={isGeneratingImage}
+                      ></textarea>
+                    </div>
+
+                    <div>
+                      <div 
+                        className="flex items-center justify-between cursor-pointer group"
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                      >
+                        <label className="text-sm font-medium text-indigo-400 group-hover:text-indigo-300 flex items-center transition-colors">
+                          <SlidersHorizontal className="w-4 h-4 mr-2" />
+                          Advanced Configuration
+                        </label>
+                        <span className="text-xs text-slate-500 bg-white/5 px-2 py-1 rounded-md">Pro</span>
+                      </div>
+                      
+                      {showAdvanced && (
+                        <div className="mt-4 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <div>
+                            <label className="block text-xs font-medium text-slate-500 mb-2">Negative Prompt (Hindari ini)</label>
+                            <textarea 
+                              className="w-full h-20 p-3 bg-red-900/10 border border-red-900/30 rounded-xl focus:border-red-500/50 outline-none transition-all resize-none text-slate-300 placeholder:text-slate-700 text-sm shadow-inner"
+                              placeholder="ugly, blurry, deformed, low quality, text, watermark..."
+                              value={negativePrompt}
+                              onChange={(e) => setNegativePrompt(e.target.value)}
+                              disabled={isGeneratingImage}
+                            ></textarea>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-500 mb-2">Aspect Ratio</label>
+                              <div className="grid grid-cols-2 gap-2">
+                                {ASPECT_RATIOS.slice(0,4).map(ratio => (
+                                  <button
+                                    key={ratio}
+                                    onClick={() => setAspectRatio(ratio)}
+                                    className={`py-2 text-xs font-medium rounded-lg border transition-all ${
+                                      aspectRatio === ratio ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-200' : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10'
+                                    }`}
+                                  >
+                                    {ratio}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-500 mb-2">Art Style</label>
+                              <select 
+                                value={artStyle}
+                                onChange={(e) => setArtStyle(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 text-slate-300 text-sm rounded-lg p-2.5 outline-none focus:border-indigo-500/50 appearance-none"
+                              >
+                                {ART_STYLES.map(style => (
+                                  <option key={style} value={style} className="bg-slate-900">{style}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={handleGenerateImage}
+                    disabled={isGeneratingImage}
+                    className="mt-8 w-full relative group overflow-hidden bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></div>
+                    {isGeneratingImage ? (
+                      <Loader2 className="w-5 h-5 mr-3 animate-spin text-black group-hover:text-white relative z-10" />
+                    ) : (
+                      <ImageIcon className="w-5 h-5 mr-3 text-black group-hover:text-white relative z-10" />
+                    )} 
+                    <span className="relative z-10 group-hover:text-white transition-colors duration-300">
+                      {isGeneratingImage ? 'Rendering Matrix...' : 'Generate Image'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: Preview */}
+              <div className="lg:col-span-7">
+                <div className="h-full min-h-[500px] bg-black/20 backdrop-blur-sm rounded-3xl border border-white/5 flex flex-col relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none"></div>
+                  
+                  {isGeneratingImage ? (
+                    <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                      <div className="w-24 h-24 relative mb-6">
+                        <div className="absolute inset-0 border-t-2 border-indigo-500 rounded-full animate-spin"></div>
+                        <div className="absolute inset-2 border-r-2 border-purple-500 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                        <div className="absolute inset-4 bg-indigo-500/20 rounded-full blur-md animate-pulse"></div>
+                      </div>
+                      <h3 className="text-indigo-300 font-bold tracking-widest uppercase text-sm animate-pulse">Synthesizing Pixels</h3>
+                      <p className="text-slate-500 text-xs mt-2">Applying {artStyle} style filters...</p>
+                    </div>
+                  ) : generatedImageUrl ? (
+                    <div className="w-full h-full p-2 relative group/img animate-in zoom-in-95 duration-500">
+                      <img 
+                        src={generatedImageUrl} 
+                        alt="Generated" 
+                        className="w-full h-full object-contain rounded-2xl bg-black"
+                      />
+                      <div className="absolute inset-2 bg-gradient-to-t from-black/80 via-transparent to-transparent rounded-2xl opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-end justify-between p-6">
+                        <div>
+                          <p className="text-white font-bold text-sm">{artStyle} • {aspectRatio}</p>
+                          <p className="text-slate-300 text-xs mt-1 line-clamp-1 max-w-md">{imagePrompt}</p>
+                        </div>
+                        <button className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-3 rounded-xl transition-all hover:scale-110">
+                          <Download className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center relative z-10 opacity-50">
+                      <ImageIcon className="w-16 h-16 text-slate-600 mb-4" />
+                      <p className="text-slate-500 text-sm">Waiting for prompt input...</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: DASHBOARD & GENERATE TEKS (Kode lama digabung singkat biar file gak kepanjangan buat contoh ini) */}
           {activeTab === 'dashboard' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="text-slate-500 text-sm font-medium">Total Konten Dibuat</h3>
-                <p className="text-3xl font-bold text-slate-800 mt-2">128</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+               <div className="bg-white/[0.03] p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm hover:bg-white/[0.05] transition-colors relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/10 transition-colors"></div>
+                <h3 className="text-slate-400 text-sm font-medium">Total Konten Dibuat</h3>
+                <p className="text-4xl font-bold text-white mt-4 tracking-tight">128</p>
               </div>
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="text-slate-500 text-sm font-medium">Pengeluaran API</h3>
-                <p className="text-3xl font-bold text-slate-800 mt-2">Rp 45.000</p>
+              <div className="bg-white/[0.03] p-8 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm hover:bg-white/[0.05] transition-colors relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/10 transition-colors"></div>
+                <h3 className="text-slate-400 text-sm font-medium">Pengeluaran API</h3>
+                <p className="text-4xl font-bold text-white mt-4 tracking-tight">Rp 45k</p>
               </div>
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-indigo-500">
-                <h3 className="text-indigo-600 text-sm font-bold">Paket Aktif</h3>
-                <p className="text-xl font-bold text-slate-800 mt-1">Pro Creator</p>
-                <p className="text-xs text-slate-400 mt-1">Aktif s/d 12 Jun 2026</p>
+              <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 p-8 rounded-3xl border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.1)] relative overflow-hidden">
+                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl"></div>
+                <h3 className="text-indigo-300 text-sm font-bold uppercase tracking-wider">Paket Aktif</h3>
+                <p className="text-2xl font-bold text-white mt-4 tracking-tight">Pro Creator</p>
+                <p className="text-sm text-indigo-200/60 mt-2">Aktif s/d 12 Jun 2026</p>
               </div>
             </div>
           )}
 
           {activeTab === 'generate' && (
-            <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-              <h2 className="text-xl font-bold mb-6">Pilih Tipe Konten</h2>
-              {errorMsg && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl border border-red-200 text-sm">
-                  {errorMsg}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="max-w-4xl mx-auto bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl p-10 relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+              <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
+                <Sparkles className="w-6 h-6 mr-3 text-indigo-400" /> Pilih Arsitektur Konten Teks
+              </h2>
+              <div className="grid grid-cols-2 gap-4 mb-10">
                 {CONTENT_TYPES.map((type) => (
                   <button 
                     key={type} 
                     onClick={() => setSelectedType(type)}
-                    className={`p-4 border rounded-xl text-left transition-all group ${selectedType === type ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}`}
+                    className={`p-5 rounded-2xl text-left transition-all duration-300 group relative overflow-hidden ${
+                      selectedType === type ? 'bg-indigo-500/10 border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]' : 'bg-white/[0.02] border border-white/5 hover:border-white/20 hover:bg-white/[0.04]'
+                    }`}
                   >
-                    <h3 className={`font-semibold ${selectedType === type ? 'text-indigo-700' : 'text-slate-800 group-hover:text-indigo-600'}`}>{type}</h3>
-                    <p className="text-xs text-slate-500 mt-1">Generate otomatis dengan AI</p>
+                    {selectedType === type && <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/5 pointer-events-none"></div>}
+                    <h3 className={`font-semibold relative z-10 tracking-wide ${selectedType === type ? 'text-indigo-300' : 'text-slate-200'}`}>{type}</h3>
+                    <p className="text-xs text-slate-500 mt-2 relative z-10 font-medium">Neural Engine Generation</p>
                   </button>
                 ))}
               </div>
-              
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-slate-700">Topik atau Kata Kunci</label>
-                <textarea 
-                  className="w-full h-32 p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
-                  placeholder="Contoh: Buatkan caption instagram untuk promosi sepatu lari terbaru dengan gaya bahasa anak skena jaksel..."
-                  value={promptInput}
-                  onChange={(e) => setPromptInput(e.target.value)}
-                  disabled={isGenerating}
-                ></textarea>
-                
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-3 ml-1">Konteks & Parameter</label>
+                  <textarea 
+                    className="w-full h-40 p-6 bg-black/60 border border-white/10 rounded-2xl focus:border-indigo-500/50 outline-none transition-all resize-none text-slate-200 placeholder:text-slate-600 shadow-inner"
+                    placeholder="Masukkan instruksi brutal lu di sini..."
+                    value={promptInput}
+                    onChange={(e) => setPromptInput(e.target.value)}
+                    disabled={isGenerating}
+                  ></textarea>
+                </div>
                 <div className="flex justify-end">
                   <button 
-                    onClick={handleGenerate}
+                    onClick={handleGenerateText}
                     disabled={isGenerating}
-                    className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-3 px-8 rounded-xl flex items-center transition-all shadow-md shadow-indigo-200"
+                    className="relative group overflow-hidden bg-white text-black font-bold py-4 px-10 rounded-2xl flex items-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                   >
-                    {isGenerating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Zap className="w-5 h-5 mr-2" />} 
-                    {isGenerating ? 'Sedang Mikir...' : 'Generate Sekarang'}
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></div>
+                    {isGenerating ? <Loader2 className="w-5 h-5 mr-3 animate-spin text-black group-hover:text-white relative z-10" /> : <Zap className="w-5 h-5 mr-3 text-black group-hover:text-white relative z-10" />} 
+                    <span className="relative z-10 group-hover:text-white transition-colors duration-300">{isGenerating ? 'Synthesizing...' : 'Initialize AI'}</span>
                   </button>
                 </div>
-
                 {generatedContent && (
-                  <div className="mt-8 pt-8 border-t border-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-lg text-slate-800">Hasil Generate</h3>
-                      <button 
-                        onClick={handleCopy}
-                        className={`flex items-center text-sm px-3 py-1.5 rounded-lg transition-all ${isCopied ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                      >
-                        {isCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                        {isCopied ? 'Tercopy!' : 'Copy Text'}
+                  <div className="mt-10 pt-10 border-t border-white/10 animate-in fade-in duration-700">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="font-bold text-xl text-white flex items-center"><span className="w-2 h-2 bg-indigo-500 rounded-full mr-3 shadow-[0_0_10px_rgba(99,102,241,0.8)]"></span>Output Result</h3>
+                      <button onClick={handleCopy} className={`flex items-center text-sm font-medium px-4 py-2 rounded-xl transition-all ${isCopied ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-white/5 text-slate-300 border border-white/5'}`}>
+                        {isCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />} {isCopied ? 'Copied' : 'Copy Output'}
                       </button>
                     </div>
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 whitespace-pre-wrap text-slate-700 leading-relaxed">
-                      {generatedContent}
-                    </div>
+                    <div className="bg-black/50 p-8 rounded-2xl border border-white/5 whitespace-pre-wrap text-slate-300 leading-relaxed">{generatedContent}</div>
                   </div>
                 )}
               </div>
@@ -245,6 +438,13 @@ function App() {
           )}
         </div>
       </main>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+      `}} />
     </div>
   );
 }
