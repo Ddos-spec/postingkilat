@@ -1,5 +1,18 @@
-node_modules
-# Keep environment variables out of version control
-.env
+node_modules/
+dist/
+.playwright-cli/
 
+# Local environment variables
+.env
+.env.local
+.env.*.local
+
+# Build caches
+*.tsbuildinfo
+
+# Generated Prisma client
 /src/generated/prisma
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
