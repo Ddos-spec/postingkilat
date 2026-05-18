@@ -3413,8 +3413,8 @@ function App() {
         )}
       </main>
 
-      <div className="ui-mobile-dock fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 xl:hidden">
-        <div className="flex items-center gap-1.5 overflow-x-auto rounded-[22px] border border-white/10 bg-[#0b0d12]/88 px-2.5 py-2.5 backdrop-blur-2xl">
+      <div className="ui-mobile-dock fixed inset-x-2 bottom-[calc(0.625rem+env(safe-area-inset-bottom))] z-40 xl:hidden sm:inset-x-3 sm:bottom-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="grid grid-cols-6 gap-1 rounded-[20px] border border-white/10 bg-[#0b0d12]/88 px-2 py-2 backdrop-blur-2xl sm:rounded-[22px] sm:px-2.5 sm:py-2.5">
           {MOBILE_DOCK_ITEMS.map((viewId) => {
             const navItem = NAV_ITEMS.find((item) => item.id === viewId);
 
@@ -3429,14 +3429,14 @@ function App() {
               <button
                 key={navItem.id}
                 onClick={() => setActiveView(navItem.id)}
-                className={`flex min-w-[60px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] transition ${
+                className={`flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-[18px] px-1.5 py-1.5 text-[10px] leading-none transition sm:gap-1 sm:rounded-2xl sm:px-2 sm:py-2 sm:text-[11px] ${
                   isActive
                     ? 'bg-white text-black'
                     : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
                 }`}
               >
-                <Icon className="h-4 w-4" />
-                <span className="truncate">{navItem.label}</span>
+                <Icon className="h-[15px] w-[15px] sm:h-4 sm:w-4" />
+                <span className="max-w-full truncate text-center tracking-[-0.01em]">{navItem.label}</span>
               </button>
             );
           })}

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .playwright-cli/
+output/playwright/
 
 # Local environment variables
 .env
