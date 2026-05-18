@@ -29,7 +29,6 @@ import {
   Sparkles,
   User,
   X,
-  Zap,
 } from 'lucide-react';
 
 const CONTENT_TYPES = [
@@ -71,8 +70,10 @@ const CAMPAIGN_GOALS = ['Konversi', 'Awareness', 'Leads', 'Retargeting'] as cons
 const PROVIDER_IDS = ['openrouter', 'openai', 'anthropic', 'gemini', 'compatible', 'demo'] as const;
 const STORAGE_KEY = 'kontenkilat-ai-studio-v3';
 const GENERATED_ART_BASE = `${import.meta.env.BASE_URL}generated/`;
+const BRAND_ASSET_BASE = `${import.meta.env.BASE_URL}brand/`;
 const HERO_ART_PRIMARY = `${GENERATED_ART_BASE}hero-campaign.webp`;
 const HERO_ART_SECONDARY = `${GENERATED_ART_BASE}mobile-studio.webp`;
+const BRAND_LOGO_MARK = `${BRAND_ASSET_BASE}logo-mark.png`;
 
 type ContentType = (typeof CONTENT_TYPES)[number];
 type AspectRatio = (typeof ASPECT_RATIOS)[number];
@@ -1192,7 +1193,7 @@ function getInitialPersistedState(): PersistedState | null {
 function GlassPanel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={`ui-card-hover ui-fade-up rounded-[28px] border border-white/10 bg-white/[0.04] shadow-[0_24px_80px_rgba(5,8,20,0.45)] backdrop-blur-2xl ${className}`}
+      className={`ui-card-hover ui-fade-up rounded-[24px] border border-white/10 bg-white/[0.04] shadow-[0_24px_80px_rgba(5,8,20,0.45)] backdrop-blur-2xl sm:rounded-[28px] ${className}`}
     >
       {children}
     </div>
@@ -1201,7 +1202,7 @@ function GlassPanel({ children, className = '' }: { children: ReactNode; classNa
 
 function SectionEyebrow({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.28em] text-slate-300">
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-medium uppercase tracking-[0.24em] text-slate-300 sm:text-[11px] sm:tracking-[0.28em]">
       {children}
     </span>
   );
@@ -1217,9 +1218,9 @@ function StatCard({
   detail: string;
 }) {
   return (
-    <GlassPanel className="p-5">
+    <GlassPanel className="p-4 sm:p-5">
       <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{label}</p>
-      <p className="mt-3 text-2xl font-semibold text-white">{value}</p>
+      <p className="mt-3 text-xl font-semibold text-white sm:text-2xl">{value}</p>
       <p className="mt-2 text-sm text-slate-400">{detail}</p>
     </GlassPanel>
   );
@@ -1777,15 +1778,16 @@ function App() {
       )}
 
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#06070b]/80 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-[1580px] items-center gap-4 px-4 py-4 md:px-8">
-          <div className="flex min-w-fit items-center gap-3">
-            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] shadow-[0_12px_30px_rgba(76,201,240,0.14)]">
-              <Zap className="h-5 w-5 text-cyan-300" />
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400/10 to-fuchsia-500/10" />
+        <div className="mx-auto flex max-w-[1580px] items-center gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4 md:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] shadow-[0_12px_30px_rgba(76,201,240,0.14)]">
+              <img src={BRAND_LOGO_MARK} alt="KontenKilat AI logo" className="h-full w-full object-cover" />
             </div>
             <div>
               <p className="text-sm font-semibold text-white">KontenKilat AI</p>
-              <p className="text-xs text-slate-400">Studio konten cepat untuk naskah, visual, video, dan audio</p>
+              <p className="max-w-[200px] text-xs leading-5 text-slate-400 sm:max-w-none">
+                Studio konten cepat untuk naskah, visual, video, dan audio
+              </p>
             </div>
           </div>
 
@@ -1900,12 +1902,12 @@ function App() {
         </aside>
       )}
 
-      <main className="relative z-10 mx-auto max-w-[1580px] px-4 py-6 pb-28 md:px-8 md:py-8 md:pb-10">
-        <div className="mb-6 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="space-y-4">
+      <main className="relative z-10 mx-auto max-w-[1580px] px-4 py-5 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:py-6 sm:pb-28 md:px-8 md:py-8 md:pb-10">
+        <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="space-y-3 sm:space-y-4">
             <SectionEyebrow>{activeViewMeta.title}</SectionEyebrow>
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
+              <h1 className="text-[2.2rem] font-semibold leading-[1.02] tracking-tight text-white sm:text-[2.75rem] md:text-5xl">
                 KontenKilat AI Studio
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300 md:text-base">
@@ -1941,7 +1943,7 @@ function App() {
                 <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
                   <button
                     onClick={() => setActiveView('campaigns')}
-                    className="ui-sheen group relative min-h-[340px] overflow-hidden rounded-[28px] border border-white/10 bg-black/30 text-left"
+                    className="ui-sheen group relative min-h-[270px] overflow-hidden rounded-[24px] border border-white/10 bg-black/30 text-left sm:min-h-[340px] sm:rounded-[28px]"
                   >
                     <img
                       src={HERO_ART_PRIMARY}
@@ -1950,18 +1952,18 @@ function App() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-br from-black/25 via-black/35 to-black/70" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.22),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.16),transparent_28%)]" />
-                    <div className="relative flex h-full flex-col justify-between p-6 md:p-8">
+                    <div className="relative flex h-full flex-col justify-between p-5 sm:p-6 md:p-8">
                       <div className="flex items-center justify-between">
-                        <span className="rounded-full border border-white/15 bg-white/[0.08] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-white">
+                        <span className="rounded-full border border-white/15 bg-white/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white sm:text-[11px] sm:tracking-[0.28em]">
                           Creative OS
                         </span>
-                        <span className="rounded-full bg-lime-300 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-black">
+                        <span className="rounded-full bg-lime-300 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-black sm:text-[11px] sm:tracking-[0.28em]">
                           New
                         </span>
                       </div>
                       <div className="max-w-xl">
-                        <h2 className="text-3xl font-semibold text-white md:text-5xl">Campaign Engine</h2>
-                        <p className="mt-4 max-w-lg text-sm leading-7 text-slate-200 md:text-base">
+                        <h2 className="text-[2rem] font-semibold leading-[1.02] text-white sm:text-3xl md:text-5xl">Campaign Engine</h2>
+                        <p className="mt-3 max-w-lg text-sm leading-6 text-slate-200 sm:mt-4 sm:leading-7 md:text-base">
                           Transform satu brief produk jadi struktur campaign modern: hook, angle, landing copy,
                           visual prompt, storyboard, dan CTA tree.
                         </p>
@@ -2943,7 +2945,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="h-[58vh] overflow-y-auto rounded-[26px] border border-white/10 bg-black/25 p-5">
+              <div className="h-[50dvh] overflow-y-auto rounded-[24px] border border-white/10 bg-black/25 p-4 sm:h-[58vh] sm:rounded-[26px] sm:p-5">
                 <div className="space-y-5">
                   {chatMessages.map((message, index) => (
                     <div key={`${message.role}-${index}`} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -3411,8 +3413,8 @@ function App() {
         )}
       </main>
 
-      <div className="ui-mobile-dock fixed inset-x-4 bottom-4 z-40 xl:hidden">
-        <div className="flex items-center gap-2 overflow-x-auto rounded-[24px] border border-white/10 bg-[#0b0d12]/88 px-3 py-3 backdrop-blur-2xl">
+      <div className="ui-mobile-dock fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 xl:hidden">
+        <div className="flex items-center gap-1.5 overflow-x-auto rounded-[22px] border border-white/10 bg-[#0b0d12]/88 px-2.5 py-2.5 backdrop-blur-2xl">
           {MOBILE_DOCK_ITEMS.map((viewId) => {
             const navItem = NAV_ITEMS.find((item) => item.id === viewId);
 
@@ -3427,7 +3429,7 @@ function App() {
               <button
                 key={navItem.id}
                 onClick={() => setActiveView(navItem.id)}
-                className={`flex min-w-[72px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-3 py-2 text-[11px] transition ${
+                className={`flex min-w-[60px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] transition ${
                   isActive
                     ? 'bg-white text-black'
                     : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
