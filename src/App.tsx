@@ -5,6 +5,9 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useAuth } from './context/AuthContext';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import {
   Activity,
   BarChart3,
@@ -87,6 +90,23 @@ import {
 } from './lib/studio';
 
 function App() {
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const [authPage, setAuthPage] = useState<'login' | 'register'>('login');
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#06070b]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return authPage === 'login'
+      ? <LoginPage onGoRegister={() => setAuthPage('register')} />
+      : <RegisterPage onGoLogin={() => setAuthPage('login')} />;
+  }
+
   const persistedState = useMemo(() => getInitialPersistedState(), []);
   const persistedDrafts: WorkspaceDrafts = persistedState?.workspaceDrafts ?? {};
   const [activeView, setActiveView] = useState<StudioView>(persistedState?.activeView ?? 'explore');
@@ -1003,12 +1023,25 @@ function App() {
             <div className="hidden rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-slate-300 lg:block">
               {savedItems.length} asset tersimpan
             </div>
+            {user && (
+              <div className="hidden items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-300 md:flex">
+                <Coins className="h-3.5 w-3.5" />
+                <span>{user.creditBalance} kredit</span>
+              </div>
+            )}
             <button
               onClick={() => setActiveView('settings')}
               className="hidden rounded-full border border-white/10 bg-white/[0.04] p-2 text-slate-300 transition hover:bg-white/[0.08] hover:text-white md:inline-flex"
               aria-label="Buka settings"
             >
               <Settings className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => logout()}
+              className="hidden rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-slate-400 transition hover:text-white md:inline-flex"
+              title={`Keluar (${user?.email})`}
+            >
+              Keluar
             </button>
             <button
               onClick={() => setIsMobileMenuOpen((value) => !value)}

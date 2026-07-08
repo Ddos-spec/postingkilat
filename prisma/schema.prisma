@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -12,4 +6,320 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model ai_memory {
+  id             Int             @id @default(autoincrement())
+  session_id     String?         @db.VarChar(255)
+  place_id       String?         @db.VarChar(255)
+  phone          String?         @db.VarChar(50)
+  message_type   String?         @db.VarChar(20)
+  content        String?
+  timestamp      DateTime?       @default(now()) @db.Timestamp(6)
+  leads_database leads_database? @relation(fields: [place_id], references: [place_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([place_id], map: "idx_ai_memory_place_id")
+}
+
+model api_usage_tracking {
+  id               Int       @id @default(autoincrement())
+  api_name         String    @db.VarChar(100)
+  api_type         String    @db.VarChar(50)
+  requests_used    Int?      @default(0)
+  requests_limit   Int
+  cost_per_request Decimal?  @default(0) @db.Decimal(10, 6)
+  total_cost       Decimal?  @default(0) @db.Decimal(10, 2)
+  reset_period     String?   @default("monthly") @db.VarChar(20)
+  reset_date       DateTime  @db.Date
+  last_reset       DateTime? @db.Timestamp(6)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+
+  @@unique([api_name, reset_date])
+  @@index([api_name], map: "idx_api_usage_name")
+  @@index([reset_date], map: "idx_api_usage_reset")
+}
+
+model automation_log {
+  id                Int       @id @default(autoincrement())
+  action_type       String    @db.VarChar(100)
+  target_id         String    @db.VarChar(255)
+  target_type       String    @db.VarChar(50)
+  action_status     String    @db.VarChar(50)
+  action_details    Json?
+  error_message     String?
+  execution_time_ms Int?
+  triggered_by      String?   @db.VarChar(100)
+  n8n_workflow_id   String?   @db.VarChar(255)
+  n8n_execution_id  String?   @db.VarChar(255)
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([created_at], map: "idx_automation_log_created")
+  @@index([n8n_execution_id], map: "idx_automation_log_n8n")
+  @@index([action_status], map: "idx_automation_log_status")
+  @@index([action_type], map: "idx_automation_log_type")
+}
+
+model chat_responses {
+  id                 Int             @id @default(autoincrement())
+  place_id           String?         @db.VarChar(255)
+  phone              String?         @db.VarChar(50)
+  message_sent       String?
+  response_received  String?
+  response_timestamp DateTime?       @db.Timestamp(6)
+  response_type      String?         @db.VarChar(50)
+  leads_database     leads_database? @relation(fields: [place_id], references: [place_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model leads_database {
+  id                 Int                @id @default(autoincrement())
+  place_id           String             @unique @db.VarChar(255)
+  name               String
+  phone              String?            @db.VarChar(30)
+  address            String?
+  rating             Decimal?           @db.Decimal(3, 2)
+  website            String?
+  business_status    String?            @db.VarChar(50)
+  search_query       String?
+  location           String?            @db.VarChar(255)
+  scraped_at         DateTime?          @default(now()) @db.Timestamp(6)
+  has_phone          Boolean?           @default(false)
+  ai_processed       Boolean?           @default(false)
+  message_sent       Boolean?           @default(false)
+  message_response   String?
+  status             String?            @default("new") @db.VarChar(30)
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  last_contacted     DateTime?          @db.Timestamp(6)
+  contact_attempts   Int?               @default(0)
+  campaign_batch     String?            @db.VarChar(50)
+  error_details      String?
+  website_scraped    Boolean?           @default(false)
+  website_content_id Int?
+  social_media_links Json?
+  business_hours     Json?
+  services_offered   String?
+  lead_score         Int?               @default(0)
+  market_segment     String?            @db.VarChar(100)
+  ai_memory          ai_memory[]
+  chat_responses     chat_responses[]
+  scraped_content    scraped_content?   @relation(fields: [website_content_id], references: [id], onUpdate: NoAction, map: "fk_leads_content")
+  website_analysis   website_analysis[]
+
+  @@unique([name, phone], map: "unique_name_phone")
+  @@index([has_phone, message_sent, ai_processed, last_contacted], map: "idx_leads_broadcast_ready")
+  @@index([has_phone, message_sent, ai_processed, status, lead_score], map: "idx_leads_comprehensive")
+  @@index([message_sent], map: "idx_message_sent")
+  @@index([phone], map: "idx_phone")
+  @@index([place_id], map: "idx_place_id")
+  @@index([scraped_at], map: "idx_scraped_at")
+}
+
+model marketing_campaigns {
+  id                 Int       @id @default(autoincrement())
+  campaign_name      String    @db.VarChar(255)
+  campaign_type      String    @db.VarChar(50)
+  target_criteria    Json
+  message_template   String
+  status             String?   @default("draft") @db.VarChar(50)
+  leads_targeted     Int?      @default(0)
+  messages_sent      Int?      @default(0)
+  responses_received Int?      @default(0)
+  conversion_rate    Decimal?  @default(0) @db.Decimal(5, 2)
+  created_by         String?   @db.VarChar(100)
+  created_at         DateTime? @default(now()) @db.Timestamp(6)
+  started_at         DateTime? @db.Timestamp(6)
+  completed_at       DateTime? @db.Timestamp(6)
+
+  @@index([status], map: "idx_campaigns_status")
+  @@index([campaign_type], map: "idx_campaigns_type")
+}
+
+model scraped_content {
+  id               Int                @id @default(autoincrement())
+  job_id           Int?
+  source_type      String             @db.VarChar(50)
+  source_url       String             @db.VarChar(2048)
+  title            String?
+  content          String?
+  excerpt          String?
+  word_count       Int?
+  images           Json?
+  links            Json?
+  contact_info     Json?
+  business_info    Json?
+  seo_data         Json?
+  social_links     Json?
+  quality_score    Int?               @default(0)
+  scraped_at       DateTime?          @default(now()) @db.Timestamp(6)
+  content_hash     String?            @db.VarChar(64)
+  leads_database   leads_database[]
+  scraping_jobs    scraping_jobs?     @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_content_job")
+  website_analysis website_analysis[]
+
+  @@index([content_hash], map: "idx_scraped_content_hash")
+  @@index([quality_score], map: "idx_scraped_content_quality")
+  @@index([scraped_at], map: "idx_scraped_content_scraped_at")
+  @@index([source_type], map: "idx_scraped_content_source_type")
+}
+
+model scraping_jobs {
+  id               Int               @id @default(autoincrement())
+  job_type         String            @default("website") @db.VarChar(50)
+  target_url       String            @db.VarChar(2048)
+  source_id        String?           @db.VarChar(255)
+  priority         Int?              @default(5)
+  status           String?           @default("pending") @db.VarChar(50)
+  api_used         String?           @db.VarChar(100)
+  retry_count      Int?              @default(0)
+  max_retries      Int?              @default(3)
+  n8n_execution_id String?           @db.VarChar(255)
+  created_at       DateTime?         @default(now()) @db.Timestamp(6)
+  started_at       DateTime?         @db.Timestamp(6)
+  completed_at     DateTime?         @db.Timestamp(6)
+  error_message    String?
+  metadata         Json?
+  scraped_content  scraped_content[]
+
+  @@index([n8n_execution_id], map: "idx_scraping_jobs_n8n")
+  @@index([priority, created_at], map: "idx_scraping_jobs_priority")
+  @@index([source_id], map: "idx_scraping_jobs_source")
+  @@index([status], map: "idx_scraping_jobs_status")
+  @@index([job_type], map: "idx_scraping_jobs_type")
+}
+
+model session_logs {
+  id         Int       @id @default(autoincrement())
+  session_id Int?
+  action     String    @db.VarChar(50)
+  details    Json?
+  timestamp  DateTime? @default(now()) @db.Timestamp(6)
+  sessions   sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model sessions {
+  id             Int            @id @default(autoincrement())
+  session_name   String         @unique @db.VarChar(100)
+  status         String?        @default("offline") @db.VarChar(20)
+  wa_number      String?        @db.VarChar(20)
+  profile_name   String?        @db.VarChar(100)
+  webhook_url    String?
+  webhook_events Json?          @default("{\"audio\": false, \"group\": false, \"image\": false, \"video\": false, \"from_me\": true, \"document\": false, \"individual\": true, \"update_status\": true}")
+  api_key        String?        @db.VarChar(64)
+  created_at     DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?      @default(now()) @db.Timestamp(6)
+  session_logs   session_logs[]
+}
+
+model website_analysis {
+  id                    Int              @id @default(autoincrement())
+  content_id            Int?
+  place_id              String?          @db.VarChar(255)
+  domain                String           @db.VarChar(255)
+  page_speed_score      Int?
+  seo_score             Int?
+  mobile_friendly       Boolean?
+  has_contact_form      Boolean?         @default(false)
+  has_live_chat         Boolean?         @default(false)
+  has_booking_system    Boolean?         @default(false)
+  has_ecommerce         Boolean?         @default(false)
+  technologies_detected Json?
+  competitors_found     Json?
+  keywords_detected     Json?
+  content_themes        Json?
+  pain_points_detected  Json?
+  sales_opportunities   Json?
+  analyzed_at           DateTime?        @default(now()) @db.Timestamp(6)
+  scraped_content       scraped_content? @relation(fields: [content_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_analysis_content")
+  leads_database        leads_database?  @relation(fields: [place_id], references: [place_id], onUpdate: NoAction, map: "fk_analysis_place")
+
+  @@index([domain], map: "idx_website_analysis_domain")
+  @@index([place_id], map: "idx_website_analysis_place_id")
+}
+
+// ─── KontenKilat AI Tables ───────────────────────────────────────────────────
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  UNLIMITED
+}
+
+enum TransactionType {
+  TOPUP
+  USAGE
+  BONUS
+  REFUND
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+model users {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  avatar_url    String?
+  password_hash String?
+  google_id     String?  @unique
+  credit_balance Int     @default(20)
+  free_used     Int      @default(0)
+  plan          Plan     @default(FREE)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  content_history     content_history[]
+  credit_transactions credit_transactions[]
+  user_api_keys       user_api_keys[]
+}
+
+model content_history {
+  id          String   @id @default(cuid())
+  user_id     String
+  type        String
+  subtype     String?
+  prompt      String   @db.Text
+  result      String   @db.Text
+  tokens_used Int      @default(0)
+  model       String?
+  created_at  DateTime @default(now())
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model credit_transactions {
+  id          String            @id @default(cuid())
+  user_id     String
+  amount      Int
+  type        TransactionType
+  description String?
+  midtrans_id String?
+  status      TransactionStatus @default(PENDING)
+  created_at  DateTime          @default(now())
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([midtrans_id])
+}
+
+model user_api_keys {
+  id         String   @id @default(cuid())
+  user_id    String
+  provider   String
+  api_key    String
+  label      String?
+  created_at DateTime @default(now())
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, provider])
 }
