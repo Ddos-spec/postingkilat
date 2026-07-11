@@ -2,20 +2,20 @@
   "name": "KontenKilat AI Studio",
   "short_name": "KontenKilat",
   "description": "Studio konten cepat untuk naskah, visual, video, audio, campaign blueprint, dan AI copilot.",
-  "start_url": "/postingkilat/",
-  "scope": "/postingkilat/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#06070b",
   "theme_color": "#06070b",
   "icons": [
     {
-      "src": "/postingkilat/favicon.png",
+      "src": "/favicon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/postingkilat/apple-touch-icon.png",
+      "src": "/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
