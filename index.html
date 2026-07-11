@@ -1,48 +1,528 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#06070b" />
-    <meta name="robots" content="index,follow" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="KontenKilat AI" />
-    <meta
-      name="description"
-      content="KontenKilat AI Studio untuk copy, visual, video, audio, campaign blueprint, dan AI copilot."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:locale" content="id_ID" />
-    <meta property="og:title" content="KontenKilat AI Studio" />
-    <meta
-      property="og:description"
-      content="Studio konten cepat untuk naskah, visual, video, audio, campaign blueprint, dan AI copilot."
-    />
-    <meta property="og:url" content="https://ddos-spec.github.io/postingkilat/" />
-    <meta
-      property="og:image"
-      content="https://ddos-spec.github.io/postingkilat/generated/hero-campaign.webp"
-    />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="KontenKilat AI Studio" />
-    <meta
-      name="twitter:description"
-      content="Studio konten cepat untuk naskah, visual, video, audio, campaign blueprint, dan AI copilot."
-    />
-    <meta
-      name="twitter:image"
-      content="https://ddos-spec.github.io/postingkilat/generated/hero-campaign.webp"
-    />
-    <link rel="canonical" href="https://ddos-spec.github.io/postingkilat/" />
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
-    <title>KontenKilat AI</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <title>KontenKilat AI — Studio Konten & Automasi Pemasaran Instan</title>
+  <meta name="description" content="KontenKilat AI adalah studio konten all-in-one bertenaga AI untuk naskah, visual, video, audio, dan blueprint kampanye pemasaran Anda secara instan." />
+  <meta name="keywords" content="konten ai, generator video, generator naskah, ai copywriter, automasi pemasaran" />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #06070b;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-hover: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(6, 182, 212, 0.3);
+      --cyan: #06b6d4;
+      --teal: #14b8a6;
+      --text: #f8fafc;
+      --text-2: #94a3b8;
+      --text-3: #64748b;
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* Container */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ─────────────────────────────────────────────────
+       NAVBAR
+    ───────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(6, 7, 11, 0.7);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+
+    .nav-inner {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--cyan), var(--teal));
+      display: flex; align-items: center; justify-content: center;
+      color: #000; font-weight: 900; font-size: 18px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-2);
+      font-size: 14px;
+      font-weight: 500;
+      transition: color var(--transition);
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 99px;
+      transition: all var(--transition);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-ghost {
+      color: var(--text-2);
+      padding: 8px 18px;
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), var(--teal));
+      color: #020617;
+      padding: 10px 22px;
+      box-shadow: 0 0 24px rgba(6, 182, 212, 0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 32px rgba(6, 182, 212, 0.4);
+    }
+
+    /* ─────────────────────────────────────────────────
+       HERO
+    ───────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      padding: 180px 0 120px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    /* Grid pattern background */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 10%, black, transparent);
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 10%, black, transparent);
+      z-index: 0;
+    }
+
+    /* Gradient overlay glow */
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: -10%; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 400px;
+      background: radial-gradient(ellipse at center, rgba(6, 182, 212, 0.12) 0%, rgba(20, 184, 166, 0.05) 50%, transparent 75%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px 6px 8px;
+      border: 1px solid var(--border-glow);
+      border-radius: 99px;
+      background: rgba(6, 182, 212, 0.06);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--cyan);
+      margin-bottom: 32px;
+      cursor: default;
+    }
+
+    .badge-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan);
+    }
+
+    .hero h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4.2rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -2px;
+      margin-bottom: 24px;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #a5f3fc 0%, var(--cyan) 50%, var(--teal) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 19px);
+      color: var(--text-2);
+      max-width: 580px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    .hero-cta {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* ─────────────────────────────────────────────────
+       FEATURES
+    ───────────────────────────────────────────────── */
+    .features {
+      padding: 100px 0;
+      position: relative;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto 60px;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--cyan);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      transition: all var(--transition);
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .feature-card:hover {
+      background: var(--card-hover);
+      border-color: var(--border-glow);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(6, 182, 212, 0.05);
+    }
+
+    .feature-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: rgba(6, 182, 212, 0.08);
+      border: 1px solid var(--border-glow);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      margin-bottom: 24px;
+      color: var(--cyan);
+    }
+
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-2);
+      line-height: 1.6;
+    }
+
+    /* ─────────────────────────────────────────────────
+       HOW IT WORKS & PRICING & CTA
+    ───────────────────────────────────────────────── */
+    .cta-banner {
+      padding: 100px 0;
+      text-align: center;
+      background: radial-gradient(circle at center, rgba(20, 184, 166, 0.08) 0%, transparent 60%);
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.005) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 60px 40px;
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at 10% 10%, rgba(6, 182, 212, 0.1) 0%, transparent 40%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .cta-box-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-box h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+
+    .cta-box p {
+      color: var(--text-2);
+      font-size: 16px;
+      max-width: 500px;
+      margin: 0 auto 32px;
+    }
+
+    /* ─────────────────────────────────────────────────
+       FOOTER
+    ───────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 48px 0;
+      background: #020306;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+
+    .footer-copy {
+      font-size: 13px;
+      color: var(--text-3);
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="container nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">K</div>
+      KontenKilat AI
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#features">Fitur</a></li>
+      <li><a href="#cara-kerja">Cara Kerja</a></li>
+      <li><a href="#cta">Mulai</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <a href="/login" class="btn btn-ghost">Masuk</a>
+      <a href="/login" class="btn btn-primary">Mulai Gratis →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Tersedia dalam Bahasa Indonesia &amp; Inggris
+    </div>
+    <h1>Buat Konten Pemasaran<br /><span class="gradient-text">Kilat &amp; Otomatis</span></h1>
+    <p class="hero-sub">Studio konten all-in-one bertenaga AI untuk menulis naskah, menggambar visual, merancang campaign, hingga mengolah audio/video instan.</p>
+    <div class="hero-cta">
+      <a href="/login" class="btn btn-primary" style="padding: 14px 32px; font-size: 15px;">Daftar Gratis &amp; Dapat 20 Kredit →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">Fitur Utama</span>
+      <h2 class="section-title">Enam Engine Cerdas, Satu Studio Terpadu</h2>
+    </div>
+
+    <div class="features-grid">
+      <!-- Feature 1 -->
+      <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <h3>AI Script &amp; Copywriter</h3>
+        <p>Tulis naskah video TikTok, copy iklan Meta, email penjualan, hingga caption media sosial secara persuasif dalam hitungan detik.</p>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3>AI Visual Generator</h3>
+        <p>Ubah instruksi teks menjadi desain visual pemasaran, mockup produk, dan ilustrasi beresolusi tinggi dengan preset teroptimasi.</p>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="feature-card">
+        <div class="feature-icon">🎬</div>
+        <h3>AI Video Director</h3>
+        <p>Rancang storyboard video promosi dan brief arahan visual scene-by-scene agar tim videografer Anda siap eksekusi tanpa hambatan.</p>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="feature-card">
+        <div class="feature-icon">🎙️</div>
+        <h3>AI Audio &amp; Voiceover</h3>
+        <p>Hasilkan skrip podcast, sulih suara, dan pengaturan ketukan audio yang pas untuk latar belakang video kampanye pemasaran Anda.</p>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Campaign Blueprint</h3>
+        <p>Dapatkan strategi peluncuran produk lengkap dengan target market, messaging pillars, dan editorial calendar dalam satu klik.</p>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>AI Copilot Studio</h3>
+        <p>Interaksi langsung dengan asisten AI khusus pemasaran untuk memecahkan ide promosi, riset kompetitor, dan revisi naskah kilat.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-banner" id="cta">
+  <div class="container">
+    <div class="cta-box">
+      <div class="cta-box-content">
+        <h2>Siap meluncurkan kampanye Anda berikutnya?</h2>
+        <p>Bergabunglah bersama ribuan marketer dan kreator konten Indonesia. Mulai sekarang tanpa biaya kartu kredit.</p>
+        <a href="/login" class="btn btn-primary" style="padding: 14px 32px; font-size: 15px;">Mulai Sekarang Gratis</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container footer-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">K</div>
+      KontenKilat AI
+    </a>
+    <p class="footer-copy">&copy; 2025 KontenKilat AI Studio. Hak Cipta Dilindungi.</p>
+  </div>
+</footer>
+
+</body>
 </html>
