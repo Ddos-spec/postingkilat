@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function refreshUser() {
     try {
-      const { user } = await api.getMe()
+      const { user } = await api.getSession()
       setUser(user)
     } catch {
       setUser(null)

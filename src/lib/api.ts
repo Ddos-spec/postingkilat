@@ -14,6 +14,7 @@ async function req<T>(path: string, opts?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  getSession: () => req<{ user: AuthUser | null }>('/api/auth/session'),
   getMe: () => req<{ user: AuthUser }>('/api/auth/me'),
   login: (email: string, password: string) =>
     req<{ user: AuthUser }>('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),

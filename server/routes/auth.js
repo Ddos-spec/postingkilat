@@ -24,6 +24,18 @@ function setAuthCookie(res, token) {
   })
 }
 
+function toPublicUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    avatarUrl: user.avatar_url,
+    creditBalance: user.credit_balance,
+    plan: user.plan,
+    freeUsed: user.free_used,
+  }
+}
+
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
@@ -40,7 +52,7 @@ router.post('/register', async (req, res) => {
 
     const token = signToken(user)
     setAuthCookie(res, token)
-    res.json({ user: { id: user.id, email: user.email, name: user.name, creditBalance: user.credit_balance } })
+    res.json({ user: toPublicUser(user) })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Gagal register' })
@@ -59,7 +71,7 @@ router.post('/login', async (req, res) => {
 
     const token = signToken(user)
     setAuthCookie(res, token)
-    res.json({ user: { id: user.id, email: user.email, name: user.name, creditBalance: user.credit_balance } })
+    res.json({ user: toPublicUser(user) })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Gagal login' })
@@ -89,7 +101,7 @@ router.post('/google', async (req, res) => {
 
     const token = signToken(user)
     setAuthCookie(res, token)
-    res.json({ user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatar_url, creditBalance: user.credit_balance } })
+    res.json({ user: toPublicUser(user) })
   } catch (err) {
     console.error(err)
     res.status(401).json({ error: 'Google token tidak valid' })
@@ -100,6 +112,24 @@ router.post('/google', async (req, res) => {
 router.post('/logout', (req, res) => {
   res.clearCookie('token')
   res.json({ ok: true })
+})
+
+// Unlike /me, this endpoint deliberately treats a missing or expired cookie as
+// an anonymous session. The login screen can bootstrap without a noisy 401.
+router.get('/session', async (req, res) => {
+  try {
+    const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '')
+    if (!token) return res.json({ user: null })
+
+    const payload = jwt.verify(token, process.env.JWT_SECRET)
+    const user = await prisma.users.findUnique({
+      where: { id: payload.id },
+      select: { id: true, email: true, name: true, avatar_url: true, credit_balance: true, plan: true, free_used: true },
+    })
+    return res.json({ user: user ? toPublicUser(user) : null })
+  } catch {
+    return res.json({ user: null })
+  }
 })
 
 // GET /api/auth/me
@@ -114,17 +144,7 @@ router.get('/me', async (req, res) => {
       select: { id: true, email: true, name: true, avatar_url: true, credit_balance: true, plan: true, free_used: true },
     })
     if (!user) return res.status(404).json({ error: 'User tidak ditemukan' })
-    res.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatarUrl: user.avatar_url,
-        creditBalance: user.credit_balance,
-        plan: user.plan,
-        freeUsed: user.free_used,
-      },
-    })
+    res.json({ user: toPublicUser(user) })
   } catch {
     res.status(401).json({ error: 'Token tidak valid' })
   }
