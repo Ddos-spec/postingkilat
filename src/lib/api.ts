@@ -1,4 +1,6 @@
-const BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+// Production calls stay same-origin through the Vercel proxy. The former
+// EasyPanel API hostname is no longer reachable from browsers.
+const BASE = import.meta.env.PROD ? '/konten-api' : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001')
 
 async function req<T>(path: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {

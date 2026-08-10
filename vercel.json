@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/konten-api/:path*", "destination": "http://163.61.44.41:3002/:path*" },
     { "source": "/:path((?!.*\\.).+)", "destination": "/app.html" }
   ]
 }

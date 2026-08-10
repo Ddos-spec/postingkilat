@@ -30,17 +30,17 @@ router.post('/register', async (req, res) => {
     const { email, name, password } = req.body
     if (!email || !password) return res.status(400).json({ error: 'Email dan password wajib diisi' })
 
-    const existing = await prisma.user.findUnique({ where: { email } })
+    const existing = await prisma.users.findUnique({ where: { email } })
     if (existing) return res.status(409).json({ error: 'Email sudah terdaftar' })
 
     const passwordHash = await bcrypt.hash(password, 12)
-    const user = await prisma.user.create({
-      data: { email, name, passwordHash, creditBalance: 20 },
+    const user = await prisma.users.create({
+      data: { email, name, password_hash: passwordHash, credit_balance: 20 },
     })
 
     const token = signToken(user)
     setAuthCookie(res, token)
-    res.json({ user: { id: user.id, email: user.email, name: user.name, creditBalance: user.creditBalance } })
+    res.json({ user: { id: user.id, email: user.email, name: user.name, creditBalance: user.credit_balance } })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Gagal register' })
@@ -51,15 +51,15 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body
-    const user = await prisma.user.findUnique({ where: { email } })
-    if (!user || !user.passwordHash) return res.status(401).json({ error: 'Email atau password salah' })
+    const user = await prisma.users.findUnique({ where: { email } })
+    if (!user || !user.password_hash) return res.status(401).json({ error: 'Email atau password salah' })
 
-    const valid = await bcrypt.compare(password, user.passwordHash)
+    const valid = await bcrypt.compare(password, user.password_hash)
     if (!valid) return res.status(401).json({ error: 'Email atau password salah' })
 
     const token = signToken(user)
     setAuthCookie(res, token)
-    res.json({ user: { id: user.id, email: user.email, name: user.name, creditBalance: user.creditBalance } })
+    res.json({ user: { id: user.id, email: user.email, name: user.name, creditBalance: user.credit_balance } })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Gagal login' })
@@ -78,18 +78,18 @@ router.post('/google', async (req, res) => {
     })
     const { sub: googleId, email, name, picture } = ticket.getPayload()
 
-    let user = await prisma.user.findFirst({ where: { OR: [{ googleId }, { email }] } })
+    let user = await prisma.users.findFirst({ where: { OR: [{ google_id: googleId }, { email }] } })
     if (user) {
-      if (!user.googleId) await prisma.user.update({ where: { id: user.id }, data: { googleId } })
+      if (!user.google_id) await prisma.users.update({ where: { id: user.id }, data: { google_id: googleId } })
     } else {
-      user = await prisma.user.create({
-        data: { email, name, avatarUrl: picture, googleId, creditBalance: 20 },
+      user = await prisma.users.create({
+        data: { email, name, avatar_url: picture, google_id: googleId, credit_balance: 20 },
       })
     }
 
     const token = signToken(user)
     setAuthCookie(res, token)
-    res.json({ user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, creditBalance: user.creditBalance } })
+    res.json({ user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatar_url, creditBalance: user.credit_balance } })
   } catch (err) {
     console.error(err)
     res.status(401).json({ error: 'Google token tidak valid' })
@@ -109,12 +109,22 @@ router.get('/me', async (req, res) => {
     if (!token) return res.status(401).json({ error: 'Tidak login' })
 
     const payload = jwt.verify(token, process.env.JWT_SECRET)
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: payload.id },
-      select: { id: true, email: true, name: true, avatarUrl: true, creditBalance: true, plan: true, freeUsed: true },
+      select: { id: true, email: true, name: true, avatar_url: true, credit_balance: true, plan: true, free_used: true },
     })
     if (!user) return res.status(404).json({ error: 'User tidak ditemukan' })
-    res.json({ user })
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatar_url,
+        creditBalance: user.credit_balance,
+        plan: user.plan,
+        freeUsed: user.free_used,
+      },
+    })
   } catch {
     res.status(401).json({ error: 'Token tidak valid' })
   }
