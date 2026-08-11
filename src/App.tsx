@@ -90,7 +90,7 @@ import {
 } from './lib/studio';
 
 function App() {
-  const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [authPage, setAuthPage] = useState<'login' | 'register'>('login');
 
   if (isLoading) {
@@ -106,6 +106,12 @@ function App() {
       ? <LoginPage onGoRegister={() => setAuthPage('register')} />
       : <RegisterPage onGoLogin={() => setAuthPage('login')} />;
   }
+
+  return <StudioApp />;
+}
+
+function StudioApp() {
+  const { user, logout } = useAuth();
 
   const persistedState = useMemo(() => getInitialPersistedState(), []);
   const persistedDrafts: WorkspaceDrafts = persistedState?.workspaceDrafts ?? {};
